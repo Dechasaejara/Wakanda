@@ -1,0 +1,1 @@
+ALTER TABLE "questions" RENAME COLUMN "code_snippet" TO "difficulty";
