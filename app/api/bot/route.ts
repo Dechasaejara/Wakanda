@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const token = process.env.PRODUCTION_BOT_TOKEN as string;
 const ADMIN_ID = process.env.ADMIN_ID ? parseInt(process.env.ADMIN_ID) : null;
+const endpoint = "https://josad-meet.onrender.com/api/bot"; // <-- put your URL here
 
 if (!token) {
   throw new Error("PRODUCTION_BOT_TOKEN environment variable not found.");
@@ -20,6 +21,5 @@ registerCommandHandlers(bot, ADMIN_ID);
 registerCallbackHandlers(bot);
 
 // Create the webhook handler
-const endpoint = "https://josad-meet.onrender.com/api/bot"; // <-- put your URL here
 await bot.api.setWebhook(endpoint);
 export const POST = webhookCallback(bot, 'std/http')
