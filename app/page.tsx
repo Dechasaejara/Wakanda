@@ -1,13 +1,21 @@
 import { db } from "@/backend/db/drizzle";
 import { Questions } from "@/backend/db/schema";
-import QuizContainer from "@/components/ui/quiz/QuizContainer";
+import QuizFilter from "@/components/ui/quiz/QuizFilter";
 
 export default async function Home() {
-  const questions = await db.select().from(Questions);
-// console.log({ questions });
+  const allQuestions = await db.select().from(Questions);
+
   return (
-    <>
-      <QuizContainer questions={questions} />
-    </>
+    <main
+      className="container mx-auto py-8"
+      style={{
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      }}
+    >
+      <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+        Welcome to the Quiz App
+      </h1>
+      <QuizFilter allQuestions={allQuestions} />
+    </main>
   );
 }

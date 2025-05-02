@@ -1,7 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import { AnswerStatus } from "@/types"; // Assuming types are defined here
-import { Question } from "@/backend/db/schema"; // Assuming schema is defined here
+import { useState, useEffect, useRef, useCallback } from "react";
+// Assuming types are defined in these paths - adjust if necessary
+import { AnswerStatus } from "@/types";
+import { Question } from "@/backend/db/schema";
 
+const SCORE_INCREMENT = 10;
+const FEEDBACK_DISPLAY_TIME_MS = 1500; // Time to show feedback before next question
+
+/**
+ * Custom hook to manage the state and logic of a quiz.
+ * @param quizData - Array of question objects.
+ * @param initialLives - Starting number of lives.
+ * @param initialHints - Starting number of hints.
+ */
 export function useQuiz(
   quizData: Question[],
   initialLives = 3,
@@ -11,34 +21,47 @@ export function useQuiz(
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(initialLives);
   const [hintsAvailable, setHintsAvailable] = useState(initialHints);
-  const [answerStatus, setAnswerStatus] = useState<AnswerStatus>(null);
+  const [answerStatus, setAnswerStatus] = useState<AnswerStatus>(null); // null | 'correct' | 'incorrect'
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
-  const [feedback, setFeedback] = useState<{ message: string; color: string }>({
-    message: "",
-    color: "",
-  });
+  const [feedback, setFeedback] = useState<{ message: string; color: string }>({ message: "", color: "" });
   const [isQuizOver, setIsQuizOver] = useState(false);
   const [resultsTitle, setResultsTitle] = useState("");
   const [resultsMessage, setResultsMessage] = useState("");
   const [bestScore, setBestScore] = useState(0);
 
-  // Ref to ensure questions are available before starting
+  // Ref to prevent multiple initializations
   const isInitialized = useRef(false);
+  // Ref for timeout IDs to allow clearing if needed
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load best score from storage on mount
   useEffect(() => {
-    const savedScore = localStorage.getItem("quizAppBestScore");
-    if (savedScore) setBestScore(parseInt(savedScore, 10));
-    // Ensure quizData is populated before starting
-    if (quizData && quizData.length > 0 && !isInitialized.current) {
-        startQuiz();
-        isInitialized.current = true;
+    try {
+        const savedScore = localStorage.getItem("quizAppBestScore");
+        if (savedScore) {
+            const parsedScore = parseInt(savedScore, 10);
+            if (!isNaN(parsedScore)) {
+                setBestScore(parsedScore);
+            } else {
+                 console.warn("Invalid best score found in localStorage:", savedScore);
+            }
+        }
+    } catch (error) {
+        console.error("Could not read best score from localStorage:", error);
     }
-  // Add quizData dependency to handle async loading
-  }, [quizData]);
+  }, []); // Run only once on mount
 
-  function startQuiz() {
-    console.log("Starting quiz..."); // Debug log
+  // Start quiz when data is available
+  // Using useCallback for startQuiz as it's returned and used in QuizContainer
+  const startQuiz = useCallback(() => {
+    console.log("Starting/Restarting quiz...");
+    // Clear any pending timeouts from previous state
+    if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+    }
+
     setCurrentQuestionIndex(0);
     setScore(0);
     setLives(initialLives);
@@ -50,19 +73,106 @@ export function useQuiz(
     setFeedback({ message: "", color: "" });
     setResultsTitle("");
     setResultsMessage("");
-    isInitialized.current = true; // Mark as initialized
-  }
+    isInitialized.current = true;
+  }, [initialHints, initialLives]); // Depend on initial values
 
-  function selectAnswer(option: string) {
-    if (answerStatus !== null || isQuizOver) return;
+  // Effect to initialize quiz once data is ready
+   useEffect(() => {
+       if (quizData && quizData.length > 0 && !isInitialized.current) {
+           startQuiz();
+       }
+   }, [quizData, startQuiz]); // Rerun if quizData changes or startQuiz identity changes
 
-    // --- FIX START ---
-    // Get the current question *before* potentially changing the index
+
+  // --- Core Quiz Logic ---
+
+  const endQuiz = useCallback((completed: boolean, message: string = "Game Over!") => {
+    if(isQuizOver) return; // Prevent multiple calls
+
+    setIsQuizOver(true);
+    // Clear any pending timeouts
+    if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+    }
+
+    // Update best score if current score is higher
+    let finalMessage = "";
+    if (score > bestScore) {
+        setBestScore(score);
+        try {
+            localStorage.setItem("quizAppBestScore", score.toString());
+            finalMessage = "New high score! "; // Add to message below
+        } catch (error) {
+            console.error("Could not save best score to localStorage:", error);
+        }
+    }
+
+    if (completed) {
+        setResultsTitle("Quiz Complete!");
+        let msg = "Congratulations! You've answered all questions.";
+        const maxScore = (quizData?.length || 0) * SCORE_INCREMENT;
+        if (maxScore > 0) { // Avoid division by zero
+             if (score >= maxScore * 0.8) msg += " Excellent work!";
+             else if (score >= maxScore * 0.5) msg += " Good job!";
+             else msg += " Keep practicing!";
+        }
+        setResultsMessage(finalMessage + msg);
+    } else {
+        setResultsTitle(message); // e.g., "Out of time!" - passed from caller
+        setResultsMessage(finalMessage + "Better luck next time!");
+    }
+  }, [isQuizOver, score, bestScore, quizData]); // Dependencies for endQuiz logic
+
+  const nextQuestion = useCallback(() => {
+     // Clear existing timeout if moving manually or quickly
+      if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+      }
+
+     // Check if it was the last question
+     if (currentQuestionIndex + 1 >= quizData.length) {
+          endQuiz(true, "You've completed the quiz!"); // Quiz ends successfully
+     } else {
+          // Move to the next question: Reset relevant states
+          setAnswerStatus(null);
+          setSelectedOption(null);
+          setDisabledOptions([]); // Reset hints for the new question
+          setFeedback({ message: "", color: "" });
+          setCurrentQuestionIndex((prev) => prev + 1);
+     }
+  }, [currentQuestionIndex, quizData, endQuiz]);
+
+  const handleCorrectAnswer = useCallback(() => {
+    setScore((prev) => prev + SCORE_INCREMENT);
+    setFeedback({ message: "Correct!", color: "text-emerald-600" });
+    // Schedule moving to the next question
+    timeoutRef.current = setTimeout(nextQuestion, FEEDBACK_DISPLAY_TIME_MS);
+  }, [nextQuestion]); // Depends on nextQuestion identity
+
+  const handleIncorrectAnswer = useCallback((correctAnswer: string) => {
+    // Decrement life, ensuring it doesn't go below 0
+    setLives((prev) => Math.max(0, prev - 1));
+
+    // Set feedback message
+    const message = correctAnswer === "N/A - Time Ran Out"
+      ? "Time's up!"
+      : `Incorrect! The correct answer was ${correctAnswer}`;
+    setFeedback({ message: message, color: "text-red-600" });
+
+    // Schedule moving to the next question (lives don't end the quiz anymore)
+    timeoutRef.current = setTimeout(nextQuestion, FEEDBACK_DISPLAY_TIME_MS);
+  }, [nextQuestion]); // Depends on nextQuestion identity
+
+  const selectAnswer = useCallback((option: string) => {
+    // Prevent action if already answered, quiz is over, or no question data
+    if (answerStatus !== null || isQuizOver || !quizData || quizData.length === 0) return;
+
     const currentQuestion = quizData[currentQuestionIndex];
     if (!currentQuestion) return; // Safety check
 
     const isCorrect = option === currentQuestion.correctAnswer;
-    // --- FIX END ---
 
     setSelectedOption(option);
     setAnswerStatus(isCorrect ? "correct" : "incorrect");
@@ -72,147 +182,61 @@ export function useQuiz(
     } else {
       handleIncorrectAnswer(currentQuestion.correctAnswer);
     }
-  }
+  }, [answerStatus, isQuizOver, quizData, currentQuestionIndex, handleCorrectAnswer, handleIncorrectAnswer]);
 
-  function handleCorrectAnswer() {
-    setScore((prev) => prev + 10);
-    setFeedback({ message: "Correct!", color: "text-emerald-600" });
-    // Wait slightly longer before moving to the next question to show feedback
-    setTimeout(nextQuestion, 1500);
-  }
-
-  function handleIncorrectAnswer(correctAnswer: string) {
-    setLives((prev) => {
-      const updatedLives = prev - 1;
-      if (updatedLives <= 0) {
-        // End quiz immediately if lives run out
-        setTimeout(() => endQuiz(false, "Out of lives!"), 1500); // Keep timeout consistent
-      } else {
-        // Wait before moving to the next question
-        setTimeout(nextQuestion, 1500);
-      }
-      return updatedLives;
-    });
-
-    setFeedback({
-      message: `Incorrect! The correct answer was ${correctAnswer}`,
-      color: "text-red-600",
-    });
-  }
-
-  function nextQuestion() {
-    // Check if it was the last question
-    if (currentQuestionIndex + 1 >= quizData.length) {
-      // Check lives again in case timeout occurred simultaneously
-      if(lives > 0) {
-        endQuiz(true, "You've completed the quiz!");
-      } else if (!isQuizOver) { // Ensure endQuiz due to lives isn't already called
-         endQuiz(false, "Out of lives!");
-      }
-    } else {
-      // Reset state for the next question
-      setAnswerStatus(null);
-      setSelectedOption(null);
-      setDisabledOptions([]); // Reset disabled options for the new question
-      setFeedback({ message: "", color: "" });
-      setCurrentQuestionIndex((prev) => prev + 1);
-    }
-  }
-
-  function useHint() {
-    if (hintsAvailable <= 0 || isQuizOver || answerStatus !== null) return; // Don't allow hint after answering
-
+  const useHint = useCallback(() => {
+    // Prevent hint if none available, quiz over, already answered, or no question/options
     const currentQuestion = quizData[currentQuestionIndex];
-    if (!currentQuestion || !Array.isArray(currentQuestion.options)) return; // Safety check
+    if (hintsAvailable <= 0 || isQuizOver || answerStatus !== null || !currentQuestion || !Array.isArray(currentQuestion.options)) return;
 
     const options = currentQuestion.options as string[];
-    const incorrectOptions = options.filter(
+    const availableIncorrectOptions = options.filter(
       (opt) =>
         opt !== currentQuestion.correctAnswer && !disabledOptions.includes(opt)
     );
 
-    // Ensure there's more than one incorrect option left to remove
-    if (incorrectOptions.length > 0 && (options.length - disabledOptions.length) > 2) {
-      // Randomly select one incorrect option to disable
-      const randomIndex = Math.floor(Math.random() * incorrectOptions.length);
-      const optionToDisable = incorrectOptions[randomIndex];
+    // Only allow hint if there are at least 2 incorrect options to remove from
+    // (leaving the correct answer and at least one incorrect choice)
+    if (availableIncorrectOptions.length >= 1 && (options.length - disabledOptions.length) > 2) {
+       // Randomly select one incorrect option to disable
+       const randomIndex = Math.floor(Math.random() * availableIncorrectOptions.length);
+       const optionToDisable = availableIncorrectOptions[randomIndex];
 
-      setDisabledOptions((prev) => [...prev, optionToDisable]);
-      setHintsAvailable((prev) => prev - 1);
-      setFeedback({
-        // Provide explanation if available, otherwise a generic message
-        message: `Hint used! ${currentQuestion.explanation || 'An incorrect option was removed.'}`,
-        color: "text-blue-600",
-      });
+       setDisabledOptions((prev) => [...prev, optionToDisable]);
+       setHintsAvailable((prev) => prev - 1);
+       setFeedback({
+            message: `Hint used! ${currentQuestion.explanation || 'An incorrect option was removed.'}`,
+            color: "text-blue-600",
+       });
     } else {
          setFeedback({
-            message: "Hint cannot remove more options.",
+            message: "Hint cannot remove more options.", // Provide feedback if hint can't be used
             color: "text-orange-600",
          });
     }
-  }
-
-   function endQuiz(completed: boolean, message: string = "Game Over!") {
-    if(isQuizOver) return; // Prevent multiple calls
-
-    setIsQuizOver(true);
-
-    if (completed) {
-      handleQuizCompletion();
-    } else {
-      handleQuizFailure(message);
-    }
-  }
+  }, [hintsAvailable, isQuizOver, answerStatus, quizData, currentQuestionIndex, disabledOptions]);
 
 
-  function handleQuizCompletion() {
-    setResultsTitle("Quiz Complete!");
-    let msg = "Congratulations! You've answered all questions.";
-    // Adjust score calculation if needed (assuming 10 points per question)
-    const maxScore = quizData.length * 10;
-    if (score >= maxScore * 0.8) msg += " Excellent work!";
-    else if (score >= maxScore * 0.5) msg += " Good job!";
-    else msg += " Keep practicing!";
-
-    if (score > bestScore) {
-      setBestScore(score);
-      localStorage.setItem("quizAppBestScore", score.toString());
-      msg += " New high score!";
-    }
-
-    setResultsMessage(msg);
-  }
-
-  function handleQuizFailure(message: string) {
-    setResultsTitle(message); // Use the message passed (e.g., "Out of lives!", "Out of time!")
-    setResultsMessage("Better luck next time!");
-
-    // Update best score even on failure if the current score is higher
-    if (score > bestScore) {
-      setBestScore(score);
-      localStorage.setItem("quizAppBestScore", score.toString());
-    }
-  }
-
-  // Make sure to return all necessary states and functions
+  // Return state and actions
   return {
     currentQuestionIndex,
     score,
-    lives,
+    lives, // Still useful for display
     hintsAvailable,
     answerStatus,
     selectedOption,
     disabledOptions,
-    feedback, // Return feedback state
+    feedback,
     isQuizOver,
     resultsTitle,
     resultsMessage,
     bestScore,
+    // Return memoized functions for stable identities
     startQuiz,
     selectAnswer,
-    handleIncorrectAnswer,
-    nextQuestion, // nextQuestion is needed by timer
+    nextQuestion, // Returned in case needed externally, though primarily used internally
     useHint,
-    endQuiz, // endQuiz is needed by timer
+    endQuiz, // Returned in case needed externally
+    handleIncorrectAnswer, // Returned for use in timeout handler
   };
 }
