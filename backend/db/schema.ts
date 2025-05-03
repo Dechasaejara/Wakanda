@@ -160,8 +160,6 @@ export const Questions = pgTable("questions", {
   updatedAt: timestamp("updated_at", { mode: "string" }).default(sql`now()`),
 });
 
-
-
 // Leaderboard Table
 export const Leaderboard = pgTable("leaderboard", {
   id: serial("id").primaryKey(),
@@ -181,13 +179,18 @@ export const UserProgress = pgTable("user_progress", {
     .notNull()
     .references(() => Users.id, { onDelete: "cascade" }),
   moduleId: integer("module_id")
-    .notNull()
+    // .notNull()
     .references(() => Modules.id, { onDelete: "cascade" }),
   lessonId: integer("lesson_id")
-    .notNull()
+    // .notNull()
     .references(() => Lessons.id, { onDelete: "cascade" }),
   completed: boolean("completed").default(false),
   score: integer("score").notNull(),
+  subject: varchar("subject", { length: 100 }),
+  gradeLevel: varchar("grade_Level", { length: 100 }),
+  difficulty: varchar("difficulty", { length: 100 }),
+  topic: varchar("topic", { length: 100 }),
+  unit: varchar("unit", { length: 100 }),
   correctAnswers: integer("correct_answers").notNull(),
   totalQuestions: integer("total_questions").notNull(),
   timeSpent: integer("time_spent").notNull(),

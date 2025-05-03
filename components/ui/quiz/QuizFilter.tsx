@@ -24,6 +24,7 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All");
   const [selectedUnit, setSelectedUnit] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
+  const user = useAppContext().user; // Assuming you have a context to get user data
 
   // Dynamically filter options for each dropdown based on previous selections
   const filteredQuestionsBySubject = useMemo(() => {
@@ -87,11 +88,20 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
 
   return (
     <div className="flex flex-col w-full">
-     
       <div className="py-4 px-6 rounded-lg mb-6 bg-indigo-600 shadow">
-        <h2 className="text-xl font-semibold mb-3 text-gray-400 p-2 text-center">
-          Filter Questions
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold mb-3 text-gray-400 p-2 text-center">
+            Filter Questions
+          </h2>
+          <div className="p-2">
+            <img
+              src={user?.initDataUnsafe.user?.photo_url}
+              alt="User Avatar"
+              className="w-10 h-10 rounded-full border-2 border-indigo-600"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
           {/* Subject Filter */}
           {subjects.length > 1 && (
@@ -203,7 +213,17 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
           selectedDifficulty,
           selectedUnit,
           selectedSection,
+         
+
         })}
+        quiz={{
+          subject:selectedSubject,
+          difficulty:selectedDifficulty,
+          gradeLevel:selectedGradeLevel,
+          unit:selectedUnit,
+          topic: selectedSection,
+          totalQuestions: filteredQuestionsBySection.length,
+        }}
         questions={filteredQuestionsBySection}
       />
     </div>

@@ -7,16 +7,27 @@ import ResultsScreen from "./ResultsScreen";
 import { useQuiz } from "./hooks/useQuiz";
 import { useTimer } from "./hooks/useTimer";
 import { Question } from "@/backend/db/schema";
+import { useAppContext } from "@/components/layout/navigation";
 
+interface filteredQuestions {
+  subject: string;
+  gradeLevel: string;
+  difficulty: string;
+  unit: string;
+  totalQuestions: number;
+  topic: string;
+}
 interface QuizContainerProps {
   questions: Question[];
+  quiz: filteredQuestions;
 }
 
 const DEFAULT_TIME_LIMIT = 20;
 
-const QuizContainer = ({ questions }: QuizContainerProps) => {
+const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
   const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]); // Store filtered questions
+  const user = useAppContext().user; // Assuming you have a context to get user data
 
   const {
     currentQuestionIndex,
@@ -65,9 +76,57 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
     handleTimeout
   );
 
+  // useEffect(() => {
+  //   if (isQuizOver) {
+
+  //     stopTimer();
+  //     return;
+  //   }
+
+  //   if (answerStatus === null && currentQuestion) {
+  //     startTimer(currentQuestion.timeLimit || DEFAULT_TIME_LIMIT);
+  //   } else {
+  //     stopTimer();
+  //   }
+  // }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
+
   useEffect(() => {
+    const postUserProgress = async () => {
+      try {
+        const progressData = {
+          userId: user?.initDataUnsafe.user?.id || 0,
+          subject: quiz.subject,
+          gradeLevel: quiz.gradeLevel,
+          difficulty: quiz.difficulty,
+          topic: quiz.topic,
+          unit: quiz.unit,
+          totalQuestions: quiz.totalQuestions,
+          correctAnswers: score / 10, // Assuming each correct answer gives 10 points
+          score,
+          timeSpent: timeLimit * currentQuestionIndex, // Example: total time spent
+          completed: true,
+          completedAt: new Date().toISOString(),
+        };
+
+        const response = await fetch("/api/userProgress", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(progressData),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to post user progress:", await response.json());
+        }
+      } catch (error) {
+        console.error("Error posting user progress:", error);
+      }
+    };
+
     if (isQuizOver) {
       stopTimer();
+      postUserProgress(); // Post user progress when the quiz is over
       return;
     }
 
@@ -76,7 +135,18 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
     } else {
       stopTimer();
     }
-  }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
+  }, [
+    isQuizOver,
+    answerStatus,
+    currentQuestion,
+    startTimer,
+    stopTimer,
+    user,
+    quiz,
+    score,
+    timeLimit,
+    currentQuestionIndex,
+  ]);
 
   const progress = useMemo(() => {
     if (!filteredQuestions || filteredQuestions.length === 0) return 0;
@@ -198,7 +268,8 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
         {/* Conditional Rendering: Quiz Active vs. Results Screen */}
         {!isQuizOver && currentQuestion ? (
           <div className="mt-2 flex flex-col items-center justify-between">
-            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">{`${currentQuestion.id}. ${currentQuestion.question}`}</h2>;
+            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">{`${currentQuestion.id}. ${currentQuestion.question}`}</h2>
+            ;
             <Options
               options={
                 Array.isArray(currentQuestion.options)
@@ -234,6 +305,7 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
           </div>
         ) : (
           <ResultsScreen
+            user={user?.initDataUnsafe?.user?.id || 0}
             finalScore={score}
             bestScore={bestScore}
             title={resultsTitle}
