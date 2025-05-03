@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Life Journal Calendar - Your Memory Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f9fafb;
+      }
+      .other-month {
+        color: #9ca3af;
+        pointer-events: none;
+      }
+      .current-day {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-radius: 50%;
+      }
+      .selected-day {
+        background-color: #fcd34d;
+        border-radius: 50%;
+        border: 2px solid #f59e0b;
+      }
+      .calendar-day {
+        aspect-ratio: 1 / 1;
+        position: relative;
+        min-height: 40px;
+      }
+      .day-indicator {
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 50;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+      }
+      .modal-content {
+        width: 100%;
+        max-width: 500px;
+        margin: auto;
+      }
+      #search-results,
+      #memory-text,
+      #category-list-container {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      #search-results::-webkit-scrollbar,
+      #memory-text::-webkit-scrollbar,
+      #category-list-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      #search-results::-webkit-scrollbar-track,
+      #memory-text::-webkit-scrollbar-track,
+      #category-list-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      #search-results::-webkit-scrollbar-thumb,
+      #memory-text::-webkit-scrollbar-thumb,
+      #category-list-container::-webkit-scrollbar-thumb {
+        background: #a0aec0;
+        border-radius: 4px;
+      }
+      #search-results::-webkit-scrollbar-thumb:hover,
+      #memory-text::-webkit-scrollbar-thumb:hover,
+      #category-list-container::-webkit-scrollbar-thumb:hover {
+        background: #718096;
+      }
+      .toggle-checkbox:checked {
+        right: 0;
+        border-color: #48bb78;
+      }
+      .toggle-checkbox:checked + .toggle-label {
+        background-color: #48bb78;
+      }
+      .color-swatch {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border-radius: 3px;
+        margin-right: 0.5em;
+        vertical-align: middle;
+        border: 1px solid #ccc;
+      }
+      .calendar-day {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+      .memory-note {
+        background-color: #333;
+        color: #fff;
+        font-family: "Permanent Marker", cursive;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+      }
+      .telegram-header {
+        background-color: #0088cc;
+        color: white;
+        padding: 1rem;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+      }
+    </style>
+  </head>
+  <body class="p-2 sm:p-4">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg">
+      <div class="telegram-header">
+        <h1 class="text-xl sm:text-2xl font-bold text-center">
+          Life Journal Calendar - Your Memory Buddy
+        </h1>
+      </div>
+      <div class="p-4 sm:p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+          <div>
+            <label
+              for="category-filter"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Filter by Category:</label
+            >
+            <select
+              id="category-filter"
+              class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            ></select>
+          </div>
+          <div>
+            <label
+              for="search-term"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Search Memories:</label
+            >
+            <input
+              type="text"
+              id="search-term"
+              placeholder="What’s on your mind, buddy?"
+              class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
+          <div>
+            <label
+              for="search-date"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Search by Date:</label
+            >
+            <input
+              type="date"
+              id="search-date"
+              class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
+          <div
+            class="md:col-span-3 flex flex-wrap justify-center items-center gap-2 mt-2"
+          >
+            <button
+              id="search-button"
+              class="bg-[#0088cc] hover:bg-[#0077bb] text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm"
+            >
+              <i class="fas fa-search mr-1"></i> Search
+            </button>
+            <button
+              id="clear-search-button"
+              class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm"
+            >
+              Clear Search
+            </button>
+            <button
+              id="manage-categories-button"
+              class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm"
+            >
+              <i class="fas fa-tags mr-1"></i> Manage Categories
+            </button>
+            <div class="flex justify-center mt-4">
+              <button
+                id="open-telegram"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
+              >
+                <i class="fab fa-telegram-plane mr-1"></i> Open in Telegram
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="search-results-container" class="mb-6 hidden">
+          <h3 class="text-lg font-semibold text-gray-700 mb-2">
+            Search Results:
+          </h3>
+          <div
+            id="search-results"
+            class="border border-gray-200 rounded-md p-3 bg-gray-50"
+          >
+            <p class="text-gray-500 italic">No results found.</p>
+          </div>
+        </div>
+        <div id="calendar-view">
+          <div class="flex justify-between items-center mb-4">
+            <button
+              id="prev-month"
+              class="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Previous month"
+            >
+              <i class="fas fa-chevron-left text-gray-600"></i>
+            </button>
+            <h2
+              id="month-year"
+              class="text-xl sm:text-2xl font-bold text-gray-700"
+            ></h2>
+            <button
+              id="next-month"
+              class="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Next month"
+            >
+              <i class="fas fa-chevron-right text-gray-600"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-7 gap-2 text-center mb-2">
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Sun
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Mon
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Tue
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Wed
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Thu
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Fri
+            </div>
+            <div class="font-semibold text-gray-600 text-xs sm:text-sm">
+              Sat
+            </div>
+          </div>
+          <div id="calendar-days" class="grid grid-cols-7 gap-2"></div>
+        </div>
+      </div>
+    </div>
+    <div id="memory-modal" class="modal">
+      <div class="modal-content bg-white rounded-lg shadow-xl">
+        <div class="telegram-header flex justify-between items-center">
+          <h3 id="modal-date" class="text-lg font-semibold"></h3>
+          <button id="close-modal" class="text-white text-2xl">×</button>
+        </div>
+        <div class="p-4 sm:p-6">
+          <div id="modal-message" class="text-green-600 mb-4"></div>
+          <div id="memory-list" class="mb-4"></div>
+          <div id="memory-form">
+            <div class="mb-4">
+              <label
+                for="memory-category"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Category:</label
+              >
+              <select
+                id="memory-category"
+                class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+              ></select>
+            </div>
+            <div class="mb-4">
+              <label
+                for="memory-text"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Your Memory:</label
+              >
+              <textarea
+                id="memory-text"
+                rows="4"
+                class="w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm"
+                placeholder="How was your day, buddy? Jot down your thoughts here..."
+              ></textarea>
+            </div>
+            <div class="mb-4">
+              <button
+                id="record-audio"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md w-full sm:w-auto"
+              >
+                Record Audio
+              </button>
+              <audio
+                id="audio-preview"
+                controls
+                class="mt-2 w-full"
+                style="display: none"
+              ></audio>
+            </div>
+            <div class="mb-4">
+              <button
+                id="record-video"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md w-full sm:w-auto"
+              >
+                Record Video
+              </button>
+              <video
+                id="video-preview"
+                class="w-full mt-2"
+                style="display: none"
+              ></video>
+              <video
+                id="video-playback"
+                controls
+                class="mt-2 w-full"
+                style="display: none"
+              ></video>
+            </div>
+            <div class="flex items-center justify-start mb-5">
+              <span class="text-sm font-medium text-gray-700 mr-3"
+                >Visibility:</span
+              >
+              <div
+                class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+              >
+                <input
+                  type="checkbox"
+                  name="toggle"
+                  id="privacy-toggle"
+                  class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                />
+                <label
+                  for="privacy-toggle"
+                  class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+                ></label>
+              </div>
+              <label
+                for="privacy-toggle"
+                id="privacy-label"
+                class="text-sm text-gray-600 cursor-pointer"
+              ></label>
+            </div>
+            <div class="mt-5 flex justify-end space-x-3">
+              <button
+                id="cancel-edit"
+                class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm hidden"
+              >
+                Cancel
+              </button>
+              <button
+                id="save-memory"
+                class="bg-[#0088cc] hover:bg-[#0077bb] text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm"
+              >
+                Save Memory
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="category-manager-modal" class="modal">
+      <div class="modal-content bg-white rounded-lg shadow-xl">
+        <div class="telegram-header flex justify-between items-center">
+          <h3 class="text-lg font-semibold">Manage Categories</h3>
+          <button id="close-category-modal" class="text-white text-2xl">
+            ×
+          </button>
+        </div>
+        <div class="p-4 sm:p-6">
+          <div
+            id="add-edit-category-form"
+            class="mb-4 p-4 border border-gray-200 rounded-md bg-gray-50"
+          >
+            <h4
+              class="text-md font-semibold text-gray-700 mb-2"
+              id="category-form-title"
+            >
+              Add New Category
+            </h4>
+            <input type="hidden" id="edit-category-id" />
+            <div class="mb-3">
+              <label
+                for="category-name"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Name:</label
+              >
+              <input
+                type="text"
+                id="category-name"
+                placeholder="Category Name"
+                class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+              />
+            </div>
+            <div class="mb-3">
+              <label
+                for="category-color"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Color:</label
+              >
+              <input
+                type="color"
+                id="category-color"
+                value="#6b7280"
+                class="w-full h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer"
+              />
+            </div>
+            <div class="flex justify-end space-x-2">
+              <button
+                id="cancel-edit-category"
+                class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-md transition duration-150 ease-in-out text-sm hidden"
+              >
+                Cancel Edit
+              </button>
+              <button
+                id="save-category-button"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition duration-150 ease-in-out text-sm"
+              >
+                <i class="fas fa-plus mr-1"></i> Add Category
+              </button>
+            </div>
+          </div>
+          <h4 class="text-md font-semibold text-gray-700 mb-2 mt-5">
+            Existing Categories
+          </h4>
+          <div
+            id="category-list-container"
+            class="border border-gray-200 rounded-md"
+          >
+            <ul id="category-list" class="divide-y divide-gray-200">
+              <li class="p-3 text-center text-gray-500 italic">
+                No categories defined yet.
+              </li>
+            </ul>
+          </div>
+          <div class="mt-5 flex justify-end">
+            <button
+              id="close-category-modal-bottom"
+              class="bg-[#0088cc] hover:bg-[#0077bb] text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const monthYearElement = document.getElementById("month-year");
+        const calendarDaysElement = document.getElementById("calendar-days");
+        const prevMonthButton = document.getElementById("prev-month");
+        const nextMonthButton = document.getElementById("next-month");
+        const categoryFilterElement =
+          document.getElementById("category-filter");
+        const searchTermElement = document.getElementById("search-term");
+        const searchDateElement = document.getElementById("search-date");
+        const searchButton = document.getElementById("search-button");
+        const clearSearchButton = document.getElementById(
+          "clear-search-button"
+        );
+        const searchResultsContainer = document.getElementById(
+          "search-results-container"
+        );
+        const searchResultsElement = document.getElementById("search-results");
+        const calendarViewElement = document.getElementById("calendar-view");
+        const manageCategoriesButton = document.getElementById(
+          "manage-categories-button"
+        );
+        const memoryModal = document.getElementById("memory-modal");
+        const modalDateElement = document.getElementById("modal-date");
+        const memoryCategoryElement =
+          document.getElementById("memory-category");
+        const memoryTextElement = document.getElementById("memory-text");
+        const privacyToggle = document.getElementById("privacy-toggle");
+        const privacyLabel = document.getElementById("privacy-label");
+        const closeModalButton = document.getElementById("close-modal");
+        const saveMemoryButton = document.getElementById("save-memory");
+        const cancelEditButton = document.getElementById("cancel-edit");
+        const memoryListElement = document.getElementById("memory-list");
+        const modalMessageElement = document.getElementById("modal-message");
+        const recordAudioButton = document.getElementById("record-audio");
+        const recordVideoButton = document.getElementById("record-video");
+        const audioPreview = document.getElementById("audio-preview");
+        const videoPreview = document.getElementById("video-preview");
+        const videoPlayback = document.getElementById("video-playback");
+        const categoryManagerModal = document.getElementById(
+          "category-manager-modal"
+        );
+        const closeCategoryModalButton = document.getElementById(
+          "close-category-modal"
+        );
+        const closeCategoryModalBottomButton = document.getElementById(
+          "close-category-modal-bottom"
+        );
+        const editCategoryIdInput = document.getElementById("edit-category-id");
+        const categoryNameInput = document.getElementById("category-name");
+        const categoryColorInput = document.getElementById("category-color");
+        const saveCategoryButton = document.getElementById(
+          "save-category-button"
+        );
+        const cancelEditCategoryButton = document.getElementById(
+          "cancel-edit-category"
+        );
+        const categoryListElement = document.getElementById("category-list");
+
+        const CATEGORY_STORAGE_KEY = "calendarAppCategories_v1";
+        const DEFAULT_CATEGORY_COLOR = "#6b7280";
+        const UNCATRGORIZED_ID = "uncategorized";
+        const DEFAULT_PRIVACY = false;
+
+        let currentDate = new Date();
+        let selectedDate = null;
+        let categories = [];
+        let currentCategoryFilter = "all";
+        let isEditingCategory = false;
+        let editingMemoryId = null;
+        let audioStream;
+        let audioRecorder;
+        let audioBlob;
+        let videoStream;
+        let videoRecorder;
+        let videoBlob;
+        let mediaUrls = [];
+
+        let db;
+        const DB_NAME = "LifeJournalDB";
+        const DB_VERSION = 1;
+        const MEMORIES_STORE = "memories";
+
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+          db = event.target.result;
+          const objectStore = db.createObjectStore(MEMORIES_STORE, {
+            autoIncrement: true,
+          });
+          objectStore.createIndex("date", "date", { unique: false });
+          objectStore.createIndex("categoryId", "categoryId", {
+            unique: false,
+          });
+        };
+        request.onsuccess = (event) => {
+          db = event.target.result;
+          loadCategories();
+          populateCategorySelectors();
+          renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+          updatePrivacyLabel(DEFAULT_PRIVACY);
+        };
+        request.onerror = (event) => {
+          console.error("IndexedDB error:", event.target.errorCode);
+        };
+
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        };
+
+        const generateUUID = () =>
+          `cat_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`;
+
+        const updatePrivacyLabel = (isPublic) => {
+          privacyLabel.textContent = isPublic ? "Public" : "Private";
+          privacyLabel.classList.toggle("text-green-600", isPublic);
+          privacyLabel.classList.toggle("text-gray-600", !isPublic);
+        };
+
+        const getCategoryById = (id) => categories.find((cat) => cat.id === id);
+
+        const getCategoryName = (id) => {
+          if (id === UNCATRGORIZED_ID) return "Uncategorized";
+          const category = getCategoryById(id);
+          return category ? category.name : "Unknown Category";
+        };
+
+        const getCategoryColor = (id) => {
+          if (id === UNCATRGORIZED_ID) return DEFAULT_CATEGORY_COLOR;
+          const category = getCategoryById(id);
+          return category ? category.color : DEFAULT_CATEGORY_COLOR;
+        };
+
+        const loadCategories = () => {
+          const storedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
+          try {
+            categories = storedCategories ? JSON.parse(storedCategories) : [];
+            if (!Array.isArray(categories)) categories = [];
+          } catch (e) {
+            console.error("Error parsing categories:", e);
+            categories = [];
+          }
+        };
+
+        const saveCategories = () => {
+          try {
+            localStorage.setItem(
+              CATEGORY_STORAGE_KEY,
+              JSON.stringify(categories)
+            );
+            populateCategorySelectors();
+            renderCategoryList();
+            if (!calendarViewElement.classList.contains("hidden")) {
+              renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            }
+          } catch (e) {
+            console.error("Error saving categories:", e);
+          }
+        };
+
+        const addCategory = (name, color) => {
+          if (!name.trim()) {
+            alert("Category name can’t be empty, buddy!");
+            return;
+          }
+          if (
+            categories.some(
+              (cat) => cat.name.toLowerCase() === name.trim().toLowerCase()
+            )
+          ) {
+            alert("Oops, that category name is already taken!");
+            return;
+          }
+          const newCategory = {
+            id: generateUUID(),
+            name: name.trim(),
+            color: color || DEFAULT_CATEGORY_COLOR,
+          };
+          categories.push(newCategory);
+          saveCategories();
+          resetCategoryForm();
+        };
+
+        const updateCategory = (id, newName, newColor) => {
+          if (!newName.trim()) {
+            alert("Category name can’t be empty, buddy!");
+            return;
+          }
+          if (
+            categories.some(
+              (cat) =>
+                cat.id !== id &&
+                cat.name.toLowerCase() === newName.trim().toLowerCase()
+            )
+          ) {
+            alert("Another category has that name already!");
+            return;
+          }
+          const categoryIndex = categories.findIndex((cat) => cat.id === id);
+          if (categoryIndex > -1) {
+            categories[categoryIndex] = {
+              ...categories[categoryIndex],
+              name: newName.trim(),
+              color: newColor,
+            };
+            saveCategories();
+            resetCategoryForm();
+          }
+        };
+
+        const deleteCategory = (id) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readonly");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const index = objectStore.index("categoryId");
+          const request = index.getAll(id);
+          request.onsuccess = () => {
+            if (request.result.length > 0) {
+              alert(
+                "Can’t delete this category yet, buddy! It’s still used in some memories."
+              );
+            } else {
+              if (
+                confirm(
+                  `Are you sure you want to delete "${getCategoryName(id)}"?`
+                )
+              ) {
+                categories = categories.filter((cat) => cat.id !== id);
+                saveCategories();
+              }
+            }
+          };
+        };
+
+        const populateCategorySelectors = () => {
+          const currentFilterValue = categoryFilterElement.value;
+          const currentModalValue = memoryCategoryElement.value;
+          categoryFilterElement.innerHTML =
+            '<option value="all">All Categories</option>';
+          memoryCategoryElement.innerHTML = "";
+          const uncategorizedOptionModal = document.createElement("option");
+          uncategorizedOptionModal.value = UNCATRGORIZED_ID;
+          uncategorizedOptionModal.textContent = "Uncategorized";
+          memoryCategoryElement.appendChild(uncategorizedOptionModal);
+          categories.forEach((cat) => {
+            const optionFilter = document.createElement("option");
+            optionFilter.value = cat.id;
+            optionFilter.textContent = cat.name;
+            categoryFilterElement.appendChild(optionFilter);
+            const optionModal = document.createElement("option");
+            optionModal.value = cat.id;
+            optionModal.textContent = cat.name;
+            optionModal.style.backgroundColor = cat.color;
+            optionModal.style.color = isColorDark(cat.color)
+              ? "#ffffff"
+              : "#000000";
+            memoryCategoryElement.appendChild(optionModal);
+          });
+          categoryFilterElement.value = currentFilterValue || "all";
+          memoryCategoryElement.value =
+            currentModalValue && getCategoryById(currentModalValue)
+              ? currentModalValue
+              : UNCATRGORIZED_ID;
+        };
+
+        const isColorDark = (hexColor) => {
+          const color = hexColor.substring(1);
+          const rgb = parseInt(color, 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = (rgb >> 0) & 0xff;
+          const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          return luma < 128;
+        };
+
+        const resetCategoryForm = () => {
+          isEditingCategory = false;
+          editCategoryIdInput.value = "";
+          categoryNameInput.value = "";
+          categoryColorInput.value = DEFAULT_CATEGORY_COLOR;
+          document.getElementById("category-form-title").textContent =
+            "Add New Category";
+          saveCategoryButton.innerHTML =
+            '<i class="fas fa-plus mr-1"></i> Add Category';
+          cancelEditCategoryButton.classList.add("hidden");
+          categoryNameInput.focus();
+        };
+
+        const setupEditCategory = (id) => {
+          const category = getCategoryById(id);
+          if (category) {
+            isEditingCategory = true;
+            editCategoryIdInput.value = id;
+            categoryNameInput.value = category.name;
+            categoryColorInput.value = category.color;
+            document.getElementById("category-form-title").textContent =
+              "Edit Category";
+            saveCategoryButton.innerHTML =
+              '<i class="fas fa-save mr-1"></i> Save Changes';
+            cancelEditCategoryButton.classList.remove("hidden");
+            categoryNameInput.focus();
+          }
+        };
+
+        const loadMemoriesForDate = (dateStr, callback) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readonly");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const index = objectStore.index("date");
+          const request = index.getAll(dateStr);
+          request.onsuccess = () => {
+            callback(request.result);
+          };
+          request.onerror = () => {
+            console.error("Error loading memories for date:", dateStr);
+            callback([]);
+          };
+        };
+
+        const addMemory = (memoryObj, callback) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readwrite");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const request = objectStore.add(memoryObj);
+          request.onsuccess = () => {
+            callback(request.result);
+          };
+          request.onerror = () => {
+            console.error("Error adding memory");
+          };
+        };
+
+        const updateMemory = (id, memoryObj, callback) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readwrite");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const request = objectStore.put(memoryObj, id);
+          request.onsuccess = () => {
+            callback();
+          };
+          request.onerror = () => {
+            console.error("Error updating memory");
+          };
+        };
+
+        const deleteMemory = (id, callback) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readwrite");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const request = objectStore.delete(id);
+          request.onsuccess = () => {
+            callback();
+          };
+          request.onerror = () => {
+            console.error("Error deleting memory");
+          };
+        };
+
+        const renderMemoryList = (memoriesForDate) => {
+          memoryListElement.innerHTML = "";
+          mediaUrls.forEach((url) => URL.revokeObjectURL(url));
+          mediaUrls = [];
+          if (memoriesForDate.length === 0) {
+            memoryListElement.innerHTML =
+              '<p class="text-gray-500 italic">No memories yet, buddy! Add one below!</p>';
+            return;
+          }
+          memoriesForDate.forEach((memory) => {
+            const memoryDiv = document.createElement("div");
+            memoryDiv.className = "memory-note p-4 mb-4 rounded-lg shadow-md";
+            let audioHtml = "";
+            if (memory.audio) {
+              const audioUrl = URL.createObjectURL(memory.audio);
+              mediaUrls.push(audioUrl);
+              audioHtml = `<audio controls src="${audioUrl}" class="mt-2 w-full"></audio>`;
+            }
+            let videoHtml = "";
+            if (memory.video) {
+              const videoUrl = URL.createObjectURL(memory.video);
+              mediaUrls.push(videoUrl);
+              videoHtml = `<video controls src="${videoUrl}" class="mt-2 w-full" style="max-width: 100%;"></video>`;
+            }
+            memoryDiv.innerHTML = `
+                        <p class="text-lg mb-2">${memory.text}</p>
+                        <p class="text-sm">Category: ${getCategoryName(
+                          memory.categoryId
+                        )}</p>
+                        <p class="text-sm">Visibility: ${
+                          memory.isPublic ? "Public" : "Private"
+                        }</p>
+                        ${audioHtml}
+                        ${videoHtml}
+                        <div class="mt-3 flex space-x-2">
+                            <button class="edit-memory-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded text-sm" data-id="${
+                              memory.id
+                            }">Edit</button>
+                            <button class="delete-memory-btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm" data-id="${
+                              memory.id
+                            }">Delete</button>
+                        </div>
+                    `;
+            memoryListElement.appendChild(memoryDiv);
+          });
+          memoryListElement
+            .querySelectorAll(".edit-memory-btn")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const id = parseInt(e.target.dataset.id);
+                editMemory(id);
+              });
+            });
+          memoryListElement
+            .querySelectorAll(".delete-memory-btn")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const id = parseInt(e.target.dataset.id);
+                if (confirm("Sure you want to delete this memory, buddy?")) {
+                  deleteMemory(id, () => {
+                    loadMemoriesForDate(selectedDate, renderMemoryList);
+                  });
+                }
+              });
+            });
+        };
+
+        const editMemory = (id) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readonly");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const request = objectStore.get(id);
+          request.onsuccess = () => {
+            const memory = request.result;
+            if (memory) {
+              memoryTextElement.value = memory.text;
+              memoryCategoryElement.value = memory.categoryId;
+              privacyToggle.checked = memory.isPublic;
+              updatePrivacyLabel(memory.isPublic);
+              audioBlob = memory.audio;
+              videoBlob = memory.video;
+              if (memory.audio) {
+                audioPreview.src = URL.createObjectURL(memory.audio);
+                audioPreview.style.display = "block";
+              } else {
+                audioPreview.style.display = "none";
+              }
+              if (memory.video) {
+                videoPlayback.src = URL.createObjectURL(memory.video);
+                videoPlayback.style.display = "block";
+              } else {
+                videoPlayback.style.display = "none";
+              }
+              editingMemoryId = id;
+              cancelEditButton.classList.remove("hidden");
+            }
+          };
+        };
+
+        const resetMemoryForm = () => {
+          memoryTextElement.value = "";
+          memoryCategoryElement.value = UNCATRGORIZED_ID;
+          privacyToggle.checked = DEFAULT_PRIVACY;
+          updatePrivacyLabel(DEFAULT_PRIVACY);
+          audioBlob = null;
+          videoBlob = null;
+          audioPreview.style.display = "none";
+          videoPlayback.style.display = "none";
+          editingMemoryId = null;
+          cancelEditButton.classList.add("hidden");
+        };
+
+        const renderCalendar = (year, month) => {
+          calendarDaysElement.innerHTML = "";
+          const today = new Date();
+          const todayStr = formatDate(today);
+          monthYearElement.textContent = `${new Date(
+            year,
+            month
+          ).toLocaleString("default", { month: "long" })} ${year}`;
+          const firstDayOfMonth = new Date(year, month, 1);
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          const startDayOfWeek = firstDayOfMonth.getDay();
+          const prevMonth = new Date(year, month, 0);
+          const daysInPrevMonth = prevMonth.getDate();
+          for (let i = startDayOfWeek; i > 0; i--) {
+            const day = daysInPrevMonth - i + 1;
+            const dayElement = createDayElement(day, null, ["other-month"]);
+            calendarDaysElement.appendChild(dayElement);
+          }
+          for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dateStr = formatDate(date);
+            const classes = [
+              "cursor-pointer",
+              "hover:bg-gray-100",
+              "rounded-full",
+            ];
+            if (dateStr === todayStr) classes.push("current-day");
+            if (dateStr === selectedDate) classes.push("selected-day");
+            const dayElement = createDayElement(day, dateStr, classes);
+            calendarDaysElement.appendChild(dayElement);
+          }
+          const totalCells = calendarDaysElement.children.length;
+          const remainingCells = 42 - totalCells;
+          for (let day = 1; day <= remainingCells; day++) {
+            const dayElement = createDayElement(day, null, ["other-month"]);
+            calendarDaysElement.appendChild(dayElement);
+          }
+          const startDate = formatDate(new Date(year, month, 1));
+          const endDate = formatDate(new Date(year, month + 1, 0));
+          loadMemoriesInRange(startDate, endDate, (memories) => {
+            memories.forEach((memory) => {
+              const dayElement = document.querySelector(
+                `[data-date="${memory.date}"]`
+              );
+              if (
+                dayElement &&
+                (currentCategoryFilter === "all" ||
+                  memory.categoryId === currentCategoryFilter)
+              ) {
+                const indicatorColor = getCategoryColor(memory.categoryId);
+                const indicatorSpan = document.createElement("span");
+                indicatorSpan.className = "day-indicator";
+                indicatorSpan.style.backgroundColor = indicatorColor;
+                dayElement.appendChild(indicatorSpan);
+              }
+            });
+          });
+        };
+
+        const loadMemoriesInRange = (startDate, endDate, callback) => {
+          const transaction = db.transaction([MEMORIES_STORE], "readonly");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const index = objectStore.index("date");
+          const range = IDBKeyRange.bound(startDate, endDate);
+          const request = index.getAll(range);
+          request.onsuccess = () => {
+            callback(request.result);
+          };
+          request.onerror = () => {
+            console.error("Error loading memories in range");
+            callback([]);
+          };
+        };
+
+        const createDayElement = (
+          dayNumber,
+          dateStr,
+          additionalClasses = []
+        ) => {
+          const dayDiv = document.createElement("div");
+          dayDiv.className = `calendar-day flex items-center justify-center p-1 text-sm sm:text-base relative ${additionalClasses.join(
+            " "
+          )}`;
+          dayDiv.textContent = dayNumber;
+          if (dateStr && !additionalClasses.includes("other-month")) {
+            dayDiv.dataset.date = dateStr;
+            dayDiv.addEventListener("click", () => {
+              selectedDate = dateStr;
+              openMemoryModal(dateStr);
+              renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            });
+          }
+          return dayDiv;
+        };
+
+        const renderCategoryList = () => {
+          categoryListElement.innerHTML = "";
+          if (categories.length === 0) {
+            categoryListElement.innerHTML =
+              '<li class="p-3 text-center text-gray-500 italic">No categories yet, buddy! Add one above!</li>';
+            return;
+          }
+          categories.forEach((cat) => {
+            const li = document.createElement("li");
+            li.className = "p-3 flex justify-between items-center";
+            li.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="color-swatch" style="background-color: ${cat.color};"></span>
+                            <span class="text-sm font-medium text-gray-800">${cat.name}</span>
+                        </div>
+                        <div class="space-x-2">
+                            <button class="edit-category-btn text-blue-600 hover:text-blue-800" data-id="${cat.id}" title="Edit Category"><i class="fas fa-edit"></i></button>
+                            <button class="delete-category-btn text-red-600 hover:text-red-800" data-id="${cat.id}" title="Delete Category"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    `;
+            li.querySelector(".edit-category-btn").addEventListener(
+              "click",
+              (e) => setupEditCategory(e.currentTarget.dataset.id)
+            );
+            li.querySelector(".delete-category-btn").addEventListener(
+              "click",
+              (e) => deleteCategory(e.currentTarget.dataset.id)
+            );
+            categoryListElement.appendChild(li);
+          });
+        };
+
+        const openMemoryModal = (dateStr) => {
+          selectedDate = dateStr;
+          const dateObj = new Date(dateStr + "T00:00:00");
+          modalDateElement.textContent = `Your Memories for ${dateObj.toLocaleDateString(
+            "default",
+            { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+          )}`;
+          loadMemoriesForDate(dateStr, (memories) => {
+            renderMemoryList(
+              memories.map((m, idx) => ({ ...m, id: m.key || idx }))
+            );
+          });
+          resetMemoryForm();
+          modalMessageElement.textContent = "";
+          memoryModal.style.display = "flex";
+        };
+
+        const closeMemoryModal = () => {
+          if (audioRecorder && audioRecorder.state !== "inactive") {
+            audioRecorder.stop();
+            audioStream.getTracks().forEach((track) => track.stop());
+          }
+          if (videoRecorder && videoRecorder.state !== "inactive") {
+            videoRecorder.stop();
+            videoStream.getTracks().forEach((track) => track.stop());
+          }
+          memoryModal.style.display = "none";
+          selectedDate = null;
+          mediaUrls.forEach((url) => URL.revokeObjectURL(url));
+          mediaUrls = [];
+          renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        };
+
+        const openCategoryModal = () => {
+          resetCategoryForm();
+          renderCategoryList();
+          categoryManagerModal.style.display = "flex";
+        };
+
+        const closeCategoryModal = () => {
+          categoryManagerModal.style.display = "none";
+        };
+
+        const performSearch = () => {
+          const term = searchTermElement.value.toLowerCase().trim();
+          const date = searchDateElement.value;
+          const categoryIdFilter = categoryFilterElement.value;
+          searchResultsElement.innerHTML = "";
+          let resultsFound = false;
+          const transaction = db.transaction([MEMORIES_STORE], "readonly");
+          const objectStore = transaction.objectStore(MEMORIES_STORE);
+          const request = objectStore.getAll();
+          request.onsuccess = () => {
+            const allMemories = request.result;
+            allMemories.forEach((memory) => {
+              let match = true;
+              if (date && memory.date !== date) match = false;
+              if (term && !memory.text.toLowerCase().includes(term))
+                match = false;
+              if (
+                categoryIdFilter !== "all" &&
+                memory.categoryId !== categoryIdFilter
+              )
+                match = false;
+              if (match) {
+                resultsFound = true;
+                const resultDiv = document.createElement("div");
+                resultDiv.className =
+                  "p-3 mb-2 border border-gray-200 rounded bg-white shadow-sm hover:bg-gray-50 transition duration-150";
+                const memoryDateObj = new Date(memory.date + "T00:00:00");
+                const formattedDate = memoryDateObj.toLocaleDateString(
+                  "default",
+                  { year: "numeric", month: "short", day: "numeric" }
+                );
+                const categoryName = getCategoryName(memory.categoryId);
+                const categoryColor = getCategoryColor(memory.categoryId);
+                const privacyIcon = memory.isPublic
+                  ? '<i class="fas fa-eye text-green-500 ml-2" title="Public"></i>'
+                  : '<i class="fas fa-lock text-gray-500 ml-2" title="Private"></i>';
+                resultDiv.innerHTML = `
+                                <div class="flex justify-between items-center mb-1">
+                                    <div>
+                                        <strong class="text-gray-800">${formattedDate}</strong>
+                                        ${privacyIcon}
+                                    </div>
+                                    <span class="text-xs font-semibold px-2 py-0.5 rounded text-white" style="background-color: ${categoryColor}; color: ${
+                  isColorDark(categoryColor) ? "white" : "black"
+                };">
+                                        ${categoryName}
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 text-sm break-words">${
+                                  memory.text.length > 150
+                                    ? memory.text.substring(0, 150) + "..."
+                                    : memory.text
+                                }</p>
+                                <button class="text-xs text-indigo-600 hover:underline mt-1 font-medium view-edit-search-result" data-date="${
+                                  memory.date
+                                }">View/Edit</button>
+                            `;
+                resultDiv
+                  .querySelector(".view-edit-search-result")
+                  .addEventListener("click", (e) => {
+                    openMemoryModal(e.target.dataset.date);
+                  });
+                searchResultsElement.appendChild(resultDiv);
+              }
+            });
+            if (!resultsFound) {
+              searchResultsElement.innerHTML =
+                '<p class="text-gray-500 italic text-center py-4">No memories found, buddy. Let’s make some!</p>';
+            }
+            searchResultsContainer.classList.remove("hidden");
+            calendarViewElement.classList.add("hidden");
+          };
+        };
+
+        const clearSearch = () => {
+          searchTermElement.value = "";
+          searchDateElement.value = "";
+          searchResultsContainer.classList.add("hidden");
+          searchResultsElement.innerHTML = "";
+          calendarViewElement.classList.remove("hidden");
+          renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        };
+
+        prevMonthButton.addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        });
+
+        nextMonthButton.addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        });
+
+        categoryFilterElement.addEventListener("change", (e) => {
+          currentCategoryFilter = e.target.value;
+          if (!calendarViewElement.classList.contains("hidden")) {
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+          }
+          if (!searchResultsContainer.classList.contains("hidden")) {
+            performSearch();
+          }
+        });
+
+        closeModalButton.addEventListener("click", closeMemoryModal);
+
+        saveMemoryButton.addEventListener("click", () => {
+          if (selectedDate) {
+            const text = memoryTextElement.value.trim();
+            const categoryId = memoryCategoryElement.value;
+            const isPublic = privacyToggle.checked;
+            if (text || audioBlob || videoBlob) {
+              const memoryObj = {
+                date: selectedDate,
+                text,
+                categoryId,
+                isPublic,
+                audio: audioBlob || null,
+                video: videoBlob || null,
+              };
+              if (editingMemoryId !== null) {
+                updateMemory(editingMemoryId, memoryObj, () => {
+                  loadMemoriesForDate(selectedDate, renderMemoryList);
+                  resetMemoryForm();
+                  modalMessageElement.textContent =
+                    "Memory updated successfully, buddy!";
+                  modalMessageElement.classList.remove("text-red-600");
+                  setTimeout(() => {
+                    modalMessageElement.textContent = "";
+                  }, 3000);
+                });
+              } else {
+                addMemory(memoryObj, () => {
+                  loadMemoriesForDate(selectedDate, renderMemoryList);
+                  resetMemoryForm();
+                  modalMessageElement.textContent =
+                    "Memory saved successfully, buddy!";
+                  modalMessageElement.classList.remove("text-red-600");
+                  setTimeout(() => {
+                    modalMessageElement.textContent = "";
+                  }, 3000);
+                });
+              }
+            } else {
+              modalMessageElement.textContent =
+                "Hey buddy, add some text or record media to save!";
+              modalMessageElement.classList.add("text-red-600");
+            }
+          }
+        });
+
+        cancelEditButton.addEventListener("click", () => {
+          resetMemoryForm();
+        });
+
+        privacyToggle.addEventListener("change", () => {
+          updatePrivacyLabel(privacyToggle.checked);
+        });
+
+        recordAudioButton.addEventListener("click", () => {
+          if (!audioRecorder || audioRecorder.state === "inactive") {
+            navigator.mediaDevices
+              .getUserMedia({ audio: true })
+              .then((stream) => {
+                audioStream = stream;
+                audioRecorder = new MediaRecorder(stream);
+                const chunks = [];
+                audioRecorder.ondataavailable = (e) => chunks.push(e.data);
+                audioRecorder.onstop = () => {
+                  audioBlob = new Blob(chunks, { type: "audio/webm" });
+                  audioPreview.src = URL.createObjectURL(audioBlob);
+                  audioPreview.style.display = "block";
+                };
+                audioRecorder.start();
+                recordAudioButton.textContent = "Stop Recording";
+              })
+              .catch((err) => {
+                console.error("Error accessing microphone:", err);
+                let errorMessage = "Could not access microphone, buddy!";
+                if (err.name === "NotAllowedError") {
+                  errorMessage =
+                    "Oops, microphone access was denied. Please allow microphone access in your browser settings, buddy!";
+                } else if (err.name === "NotFoundError") {
+                  errorMessage =
+                    "No microphone found, buddy! Please make sure a microphone is connected.";
+                } else if (err.name === "TypeError") {
+                  errorMessage =
+                    "Media recording is not supported in this browser, buddy!";
+                } else {
+                  errorMessage += " Error: " + err.message;
+                }
+                modalMessageElement.textContent = errorMessage;
+                modalMessageElement.classList.add("text-red-600");
+              });
+          } else {
+            audioRecorder.stop();
+            audioStream.getTracks().forEach((track) => track.stop());
+            recordAudioButton.textContent = "Record Audio";
+          }
+        });
+
+        recordVideoButton.addEventListener("click", () => {
+          if (!videoRecorder || videoRecorder.state === "inactive") {
+            navigator.mediaDevices
+              .getUserMedia({ video: true, audio: true })
+              .then((stream) => {
+                videoStream = stream;
+                videoPreview.srcObject = stream;
+                videoPreview.style.display = "block";
+                videoPreview.play();
+                videoRecorder = new MediaRecorder(stream);
+                const chunks = [];
+                videoRecorder.ondataavailable = (e) => chunks.push(e.data);
+                videoRecorder.onstop = () => {
+                  videoBlob = new Blob(chunks, { type: "video/webm" });
+                  videoPlayback.src = URL.createObjectURL(videoBlob);
+                  videoPlayback.style.display = "block";
+                  videoPreview.style.display = "none";
+                };
+                videoRecorder.start();
+                recordVideoButton.textContent = "Stop Recording";
+              })
+              .catch((err) => {
+                console.error("Error accessing camera:", err);
+                let errorMessage = "Could not access camera, buddy!";
+                if (err.name === "NotAllowedError") {
+                  errorMessage =
+                    "Oops, camera access was denied. Please allow camera access in your browser settings, buddy!";
+                } else if (err.name === "NotFoundError") {
+                  errorMessage =
+                    "No camera found, buddy! Please make sure a camera is connected.";
+                } else if (err.name === "TypeError") {
+                  errorMessage =
+                    "Media recording is not supported in this browser, buddy!";
+                } else {
+                  errorMessage += " Error: " + err.message;
+                }
+                modalMessageElement.textContent = errorMessage;
+                modalMessageElement.classList.add("text-red-600");
+              });
+          } else {
+            videoRecorder.stop();
+            videoStream.getTracks().forEach((track) => track.stop());
+            recordVideoButton.textContent = "Record Video";
+          }
+        });
+
+        memoryModal.addEventListener("click", (event) => {
+          if (event.target === memoryModal) closeMemoryModal();
+        });
+
+        categoryManagerModal.addEventListener("click", (event) => {
+          if (event.target === categoryManagerModal) closeCategoryModal();
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            if (memoryModal.style.display === "flex") closeMemoryModal();
+            if (categoryManagerModal.style.display === "flex")
+              closeCategoryModal();
+          }
+        });
+
+        searchButton.addEventListener("click", performSearch);
+        clearSearchButton.addEventListener("click", clearSearch);
+        searchTermElement.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") performSearch();
+        });
+        searchDateElement.addEventListener("change", performSearch);
+
+        manageCategoriesButton.addEventListener("click", openCategoryModal);
+        closeCategoryModalButton.addEventListener("click", closeCategoryModal);
+        closeCategoryModalBottomButton.addEventListener(
+          "click",
+          closeCategoryModal
+        );
+
+        saveCategoryButton.addEventListener("click", () => {
+          const name = categoryNameInput.value;
+          const color = categoryColorInput.value;
+          const id = editCategoryIdInput.value;
+          if (isEditingCategory && id) {
+            updateCategory(id, name, color);
+          } else {
+            addCategory(name, color);
+          }
+        });
+
+        cancelEditCategoryButton.addEventListener("click", resetCategoryForm);
+
+        console.log("Loading your Life Journal...");
+        console.log("All set, buddy! Start capturing your memories!");
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.Telegram.WebApp) {
+          const tg = window.Telegram.WebApp;
+
+          // Initialize Telegram Web App
+          tg.ready();
+          console.log("Telegram Web App initialized, buddy!");
+
+          // Set the app's main button
+          tg.MainButton.text = "Share Memory";
+          tg.MainButton.color = "#0088cc";
+          tg.MainButton.show();
+
+          // Handle main button click
+          tg.MainButton.onClick(() => {
+            const selectedDate =
+              document.getElementById("modal-date").textContent;
+            const memoryText = document
+              .getElementById("memory-text")
+              .value.trim();
+
+            if (memoryText) {
+              tg.sendData(
+                JSON.stringify({
+                  date: selectedDate,
+                  memory: memoryText,
+                })
+              );
+              tg.close();
+            } else {
+              alert("Hey buddy, write something to share!");
+            }
+          });
+
+          // Optional: Set the app's theme color
+          tg.themeParams.bg_color &&
+            (document.body.style.backgroundColor = tg.themeParams.bg_color);
+        } else {
+          console.warn("Telegram Web App is not available.");
+        }
+      });
+      document.getElementById("open-telegram").addEventListener("click", () => {
+        if (window.Telegram.WebApp) {
+          const tg = window.Telegram.WebApp;
+          tg.openLink("https://t.me/YourBotUsername"); // Replace with your bot's username
+        } else {
+          alert("Telegram Web App is not available, buddy!");
+        }
+      });
+    </script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </body>
+</html>
