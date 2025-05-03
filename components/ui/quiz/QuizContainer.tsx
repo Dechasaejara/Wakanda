@@ -134,7 +134,7 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
   const postUserProgress = async () => {
     try {
       const progressData = {
-        userId: user?.initDataUnsafe.user?.id || 0,
+        userId: user?.initDataUnsafe.user?.id ||  1,
         subject: quiz.subject,
         gradeLevel: quiz.gradeLevel,
         difficulty: quiz.difficulty,
