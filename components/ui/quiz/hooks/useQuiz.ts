@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { AnswerStatus } from "@/types";
 import { Question } from "@/backend/db/schema";
 
-const SCORE_INCREMENT = 10;
-const FEEDBACK_DISPLAY_TIME_MS = 1500; // Time to show feedback before next question
+const SCORE_INCREMENT = 1;
+const FEEDBACK_DISPLAY_TIME_MS = 2500; // Time to show feedback before next question
 
 /**
  * Custom hook to manage the state and logic of a quiz.
