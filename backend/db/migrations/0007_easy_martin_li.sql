@@ -1,0 +1,1 @@
+ALTER TABLE "questions" ADD COLUMN "unit" varchar(100);

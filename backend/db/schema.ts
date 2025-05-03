@@ -141,8 +141,9 @@ export const Questions = pgTable("questions", {
     onDelete: "cascade",
   }),
   subject: varchar("subject", { length: 100 }),
-  unit: varchar("topic", { length: 100 }),
-  section: varchar("subtopic", { length: 100 }),
+  unit: varchar("unit", { length: 100 }),
+  topic: varchar("topic", { length: 100 }),
+  subtopic: varchar("subtopic", { length: 100 }),
   gradeLevel: varchar("grade_level", { length: 100 }),
   type: QuizTypeEnum("quiz_type").notNull().default("assessment"),
   question: text("question").notNull(),
@@ -158,6 +159,8 @@ export const Questions = pgTable("questions", {
   createdAt: timestamp("created_at", { mode: "string" }).default(sql`now()`),
   updatedAt: timestamp("updated_at", { mode: "string" }).default(sql`now()`),
 });
+
+
 
 // Leaderboard Table
 export const Leaderboard = pgTable("leaderboard", {

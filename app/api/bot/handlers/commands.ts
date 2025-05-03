@@ -51,7 +51,9 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
 
       for (const question of questions) {
         await ctx.reply(
-          `Question: ${question.question}\nOptions: ${question.options.join(", ")}`
+          `Question: ${question.question}\nOptions: ${question.options.join(
+            ", "
+          )}`
         );
       }
     } catch (error) {
@@ -70,29 +72,29 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
 
     await ctx.reply(
       "Please upload a JSON file containing the questions array. Example format:\n" +
-        '```json\n' +
-        '[\n' +
-        '  {\n' +
+        "```json\n" +
+        "[\n" +
+        "  {\n" +
         '    "question": "What is 2 + 2?",\n' +
         '    "options": ["3", "4", "5"],\n' +
         '    "correctAnswer": "4"\n' +
-        '  },\n' +
-        '  {\n' +
+        "  },\n" +
+        "  {\n" +
         '    "question": "What is the capital of France?",\n' +
         '    "options": ["Berlin", "Paris", "Rome"],\n' +
         '    "correctAnswer": "Paris"\n' +
-        '  }\n' +
-        ']```',
+        "  }\n" +
+        "]```",
       { parse_mode: "Markdown" }
     );
   });
 
   bot.on("message:document", async (ctx) => {
-    const isAddingQuestions = addQuestionsState.get(ctx.from?.id || 0);
+    // const isAddingQuestions = addQuestionsState.get(ctx.from?.id || 0);
 
-    if (!isAddingQuestions) {
-      return; // Ignore file uploads if the user is not in the "add questions" state
-    }
+    // if (!isAddingQuestions) {
+    //   return; // Ignore file uploads if the user is not in the "add questions" state
+    // }
 
     try {
       const fileId = ctx.message.document?.file_id;
@@ -129,7 +131,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(questionsArray),
       });
-
+      console.log({ apiResponse });
       if (!apiResponse.ok) {
         throw new Error(`Failed to add questions: ${apiResponse.statusText}`);
       }
@@ -140,7 +142,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
       console.error("Error adding questions:", error);
       await ctx.reply("An error occurred while adding questions.");
     } finally {
-      addQuestionsState.delete(ctx.from?.id || 0); // Remove the user from "add questions" state
+      // addQuestionsState.delete(ctx.from?.id || 0); // Remove the user from "add questions" state
     }
   });
 
@@ -159,12 +161,16 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
 
       const firstQuestion = questions[0];
       await ctx.reply(
-        `Question: ${firstQuestion.question}\nOptions: ${firstQuestion.options.join(", ")}`
+        `Question: ${
+          firstQuestion.question
+        }\nOptions: ${firstQuestion.options.join(", ")}`
       );
       await ctx.answerCallbackQuery();
     } catch (error) {
       console.error("Error fetching questions:", error);
-      await ctx.answerCallbackQuery("An error occurred while fetching questions.");
+      await ctx.answerCallbackQuery(
+        "An error occurred while fetching questions."
+      );
     }
   });
 }

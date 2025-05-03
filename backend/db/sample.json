@@ -1,0 +1,48 @@
+[
+  {
+    "subject": "Social Studies",
+    "unit": "UNIT 5: AFRICA SINCE THE 1500S",
+    "topic": "5.1 Slavery and the Slave Trade",
+    "subtopic": "Slavery and the Slave Trade",
+    "gradeLevel": "Grade 8",
+    "type": "assessment",
+    "question": "What was the triangular trade in the context of the slave trade?",
+    "options": [
+      "Trade between Africa, Europe, and Asia",
+      "Trade between Africa, Europe, and the Americas",
+      "Trade within Africa",
+      "Trade between Europe and the Americas"
+    ],
+    "correctAnswer": "Trade between Africa, Europe, and the Americas",
+    "explanation": "The triangular trade involved the exchange of goods and slaves between Africa, Europe, and the Americas, a system that fueled the transatlantic slave trade.",
+    "difficulty": "intermediate",
+    "language": "en",
+    "reference": "Page 120, 5.1 Slavery and the Slave Trade",
+    "tags": ["triangular trade", "slave trade"],
+    "points": 2,
+    "timeLimit": 30
+  },
+  {
+    "subject": "Social Studies",
+    "unit": "UNIT 5: AFRICA SINCE THE 1500S",
+    "topic": "5.1 Slavery and the Slave Trade",
+    "subtopic": "Slavery and the Slave Trade",
+    "gradeLevel": "Grade 8",
+    "type": "assessment",
+    "question": "Which African region was most affected by the slave trade?",
+    "options": [
+      "North Africa",
+      "East Africa",
+      "West Africa",
+      "Southern Africa"
+    ],
+    "correctAnswer": "West Africa",
+    "explanation": "West Africa was the primary region from which slaves were captured and exported during the transatlantic slave trade, due to its proximity to the Atlantic Ocean and European trade routes.",
+    "difficulty": "intermediate",
+    "language": "en",
+    "reference": "Page 120, 5.1 Slavery and the Slave Trade",
+    "tags": ["West Africa", "slave trade"],
+    "points": 2,
+    "timeLimit": 30
+  }
+]
