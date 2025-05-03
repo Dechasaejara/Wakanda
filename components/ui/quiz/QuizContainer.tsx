@@ -91,42 +91,8 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
   // }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
 
   useEffect(() => {
-    const postUserProgress = async () => {
-      try {
-        const progressData = {
-          userId: user?.initDataUnsafe.user?.id || 0,
-          subject: quiz.subject,
-          gradeLevel: quiz.gradeLevel,
-          difficulty: quiz.difficulty,
-          topic: quiz.topic,
-          unit: quiz.unit,
-          totalQuestions: quiz.totalQuestions,
-          correctAnswers: score / 10, // Assuming each correct answer gives 10 points
-          score,
-          timeSpent: timeLimit * currentQuestionIndex, // Example: total time spent
-          completed: true,
-          completedAt: new Date().toISOString(),
-        };
-
-        const response = await fetch("/api/userProgress", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(progressData),
-        });
-
-        if (!response.ok) {
-          console.error("Failed to post user progress:", await response.json());
-        }
-      } catch (error) {
-        console.error("Error posting user progress:", error);
-      }
-    };
-
     if (isQuizOver) {
       stopTimer();
-      postUserProgress(); // Post user progress when the quiz is over
       return;
     }
 
@@ -135,18 +101,7 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
     } else {
       stopTimer();
     }
-  }, [
-    isQuizOver,
-    answerStatus,
-    currentQuestion,
-    startTimer,
-    stopTimer,
-    user,
-    quiz,
-    score,
-    timeLimit,
-    currentQuestionIndex,
-  ]);
+  }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
 
   const progress = useMemo(() => {
     if (!filteredQuestions || filteredQuestions.length === 0) return 0;
@@ -176,7 +131,38 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
     currentQuestion?.options,
     disabledOptions,
   ]);
+  const postUserProgress = async () => {
+    try {
+      const progressData = {
+        userId: user?.initDataUnsafe.user?.id || 0,
+        subject: quiz.subject,
+        gradeLevel: quiz.gradeLevel,
+        difficulty: quiz.difficulty,
+        topic: quiz.topic,
+        unit: quiz.unit,
+        totalQuestions: quiz.totalQuestions,
+        correctAnswers: score / 10, // Assuming each correct answer gives 10 points
+        score,
+        timeSpent: timeLimit * currentQuestionIndex, // Example: total time spent
+        completed: true,
+        completedAt: new Date().toISOString(),
+      };
 
+      const response = await fetch("/api/userProgress", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(progressData),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to post user progress:", await response.json());
+      }
+    } catch (error) {
+      console.error("Error posting user progress:", error);
+    }
+  };
   const handleStartQuiz = () => {
     if (questions.length > 0) {
       setFilteredQuestions(questions); // Use all questions or filtered ones
@@ -186,6 +172,7 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
   };
 
   const handleRestartQuiz = () => {
+    postUserProgress();
     setQuizStarted(false); // Reset the quizStarted state
     setTimeout(() => {
       handleStartQuiz(); // Restart the quiz after resetting
