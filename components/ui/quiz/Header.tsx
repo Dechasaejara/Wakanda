@@ -1,3 +1,5 @@
+'use client';
+import { useAppContext } from "@/components/layout/navigation";
 import React from "react";
 
 interface HeaderProps {
@@ -17,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+  const user = useAppContext().user; // Assuming you have a context to get user data
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
@@ -46,6 +49,14 @@ const Header: React.FC<HeaderProps> = ({
       </div>
       <div className="text-lg font-semibold text-indigo-600">
         Question: {currentQuestionIndex + 1}/{totalQuestions}
+      </div>
+
+      <div className="p-2">
+        <img
+          src={user?.initDataUnsafe.user?.photo_url}
+          alt="User Avatar"
+          className="w-10 h-10 rounded-full border-2 border-indigo-600"
+        />
       </div>
     </div>
   );

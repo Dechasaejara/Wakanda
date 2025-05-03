@@ -24,7 +24,6 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All");
   const [selectedUnit, setSelectedUnit] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
-  const user = useAppContext().user; // Assuming you have a context to get user data
 
   // Dynamically filter options for each dropdown based on previous selections
   const filteredQuestionsBySubject = useMemo(() => {
@@ -88,7 +87,7 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
 
   return (
     <div className="flex flex-col w-full">
-      <p>{user?.initDataUnsafe.user?.username}</p>
+     
       <div className="py-4 px-6 rounded-lg mb-6 bg-indigo-600 shadow">
         <h2 className="text-xl font-semibold mb-3 text-gray-400 p-2 text-center">
           Filter Questions
