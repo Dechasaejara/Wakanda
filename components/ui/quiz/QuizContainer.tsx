@@ -4,7 +4,6 @@ import Header from "./Header";
 import ProgressBar from "./ProgressBar";
 import Options from "./Options";
 import ResultsScreen from "./ResultsScreen";
-import QuestionTitle from "./Question";
 import { useQuiz } from "./hooks/useQuiz";
 import { useTimer } from "./hooks/useTimer";
 import { Question } from "@/backend/db/schema";
@@ -129,12 +128,12 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
   if (!quizStarted) {
     return (
       <div
-        className="flex justify-center items-center min-h-screen p-4 font-sans"
+        className="flex justify-center  min-h-screen p-1 font-sans"
         style={{
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
-        <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center">
+        <div className="bg-white/90 backdrop-blur-sm p-2 sm:p-1 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Ready to Start the Quiz?
           </h2>
@@ -178,7 +177,7 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       }}
     >
-      <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out ">
+      <div className="bg-white/90 backdrop-blur-sm p-4 sm:p-2 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out ">
         {/* Header */}
         <Header
           score={score}
@@ -196,25 +195,10 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
           isFailed={isQuizOver && lives <= 0}
         />
 
-        {/* Feedback Messages */}
-        {feedback.message && !isQuizOver && (
-          <div
-            className={`text-center my-3 p-2 rounded-md font-semibold ${
-              feedback.color === "text-red-600"
-                ? "bg-red-100"
-                : feedback.color === "text-emerald-600"
-                ? "bg-green-100"
-                : "bg-blue-100"
-            } ${feedback.color}`}
-          >
-            {feedback.message}
-          </div>
-        )}
-
         {/* Conditional Rendering: Quiz Active vs. Results Screen */}
         {!isQuizOver && currentQuestion ? (
           <div className="mt-2 flex flex-col items-center justify-between">
-            <QuestionTitle question={currentQuestion.question} />
+            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">{`${currentQuestion.id}. ${currentQuestion.question}`}</h2>;
             <Options
               options={
                 Array.isArray(currentQuestion.options)
@@ -232,19 +216,19 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
                 onClick={useHint}
                 disabled={isHintDisabled}
                 aria-label={`Use Hint (${hintsAvailable} left)`}
-                className={`px-5 py-2 rounded-lg font-semibold transition-all duration-200 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   isHintDisabled
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-yellow-400 hover:bg-yellow-500 text-yellow-900 focus:ring-yellow-400"
                 }`}
               >
-                Use Hint ({hintsAvailable} left)
+                Hint ({hintsAvailable} left)
               </button>
               <button
                 onClick={handleRestartQuiz}
-                className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
               >
-                Restart Quiz
+                Restart
               </button>
             </div>
           </div>
@@ -256,6 +240,21 @@ const QuizContainer = ({ questions }: QuizContainerProps) => {
             message={resultsMessage}
             restartQuiz={handleRestartQuiz}
           />
+        )}
+
+        {/* Feedback Messages */}
+        {feedback.message && !isQuizOver && (
+          <div
+            className={`text-center my-3 p-2 rounded-md font-semibold ${
+              feedback.color === "text-red-600"
+                ? "bg-red-100"
+                : feedback.color === "text-emerald-600"
+                ? "bg-green-100"
+                : "bg-blue-100"
+            } ${feedback.color}`}
+          >
+            {feedback.message}
+          </div>
         )}
       </div>
     </div>

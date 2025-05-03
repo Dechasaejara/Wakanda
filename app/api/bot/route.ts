@@ -21,6 +21,7 @@ registerCommandHandlers(bot, ADMIN_ID);
 registerCallbackHandlers(bot);
 
 // Create the webhook handler
-await bot.api.setWebhook(endpoint);
-// bot.start();
-export const POST = webhookCallback(bot, 'std/http')
+bot.start();
+
+// await bot.api.setWebhook(endpoint);
+// export const POST = webhookCallback(bot, 'std/http')

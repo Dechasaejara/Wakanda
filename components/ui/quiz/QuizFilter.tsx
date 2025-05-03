@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Question, DifficultyEnum } from "@/backend/db/schema";
 import QuizContainer from "./QuizContainer";
+import { useAppContext } from "@/components/layout/navigation";
 
 interface QuizFilterProps {
   allQuestions: Question[];
@@ -11,7 +12,9 @@ interface QuizFilterProps {
 // Helper function to get unique values for dropdowns
 const getUniqueValues = (items: Question[], key: keyof Question): string[] => {
   if (!items) return [];
-  const values = items.map((item) => item[key]).filter((value) => value != null);
+  const values = items
+    .map((item) => item[key])
+    .filter((value) => value != null);
   return ["All", ...Array.from(new Set(values as string[])).sort()];
 };
 
@@ -21,6 +24,7 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All");
   const [selectedUnit, setSelectedUnit] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
+  const user = useAppContext().user; // Assuming you have a context to get user data
 
   // Dynamically filter options for each dropdown based on previous selections
   const filteredQuestionsBySubject = useMemo(() => {
@@ -32,13 +36,17 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
   const filteredQuestionsByGrade = useMemo(() => {
     return selectedGradeLevel === "All"
       ? filteredQuestionsBySubject
-      : filteredQuestionsBySubject.filter((q) => q.gradeLevel === selectedGradeLevel);
+      : filteredQuestionsBySubject.filter(
+          (q) => q.gradeLevel === selectedGradeLevel
+        );
   }, [filteredQuestionsBySubject, selectedGradeLevel]);
 
   const filteredQuestionsByDifficulty = useMemo(() => {
     return selectedDifficulty === "All"
       ? filteredQuestionsByGrade
-      : filteredQuestionsByGrade.filter((q) => q.difficulty === selectedDifficulty);
+      : filteredQuestionsByGrade.filter(
+          (q) => q.difficulty === selectedDifficulty
+        );
   }, [filteredQuestionsByGrade, selectedDifficulty]);
 
   const filteredQuestionsByUnit = useMemo(() => {
@@ -54,25 +62,37 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
   }, [filteredQuestionsByUnit, selectedSection]);
 
   // Generate dropdown options dynamically
-  const subjects = useMemo(() => getUniqueValues(allQuestions, "subject"), [allQuestions]);
-  const gradeLevels = useMemo(() => getUniqueValues(filteredQuestionsBySubject, "gradeLevel"), [
-    filteredQuestionsBySubject,
-  ]);
-  const difficulties = useMemo(() => ["All", ...Object.values(DifficultyEnum.enumValues).sort()], []);
-  const units = useMemo(() => getUniqueValues(filteredQuestionsByDifficulty, "unit"), [
-    filteredQuestionsByDifficulty,
-  ]);
-  const sections = useMemo(() => getUniqueValues(filteredQuestionsByUnit, "topic"), [
-    filteredQuestionsByUnit,
-  ]);
+  const subjects = useMemo(
+    () => getUniqueValues(allQuestions, "subject"),
+    [allQuestions]
+  );
+  const gradeLevels = useMemo(
+    () => getUniqueValues(filteredQuestionsBySubject, "gradeLevel"),
+    [filteredQuestionsBySubject]
+  );
+  const difficulties = useMemo(
+    () => ["All", ...Object.values(DifficultyEnum.enumValues).sort()],
+    []
+  );
+  const units = useMemo(
+    () => getUniqueValues(filteredQuestionsByDifficulty, "unit"),
+    [filteredQuestionsByDifficulty]
+  );
+  const sections = useMemo(
+    () => getUniqueValues(filteredQuestionsByUnit, "topic"),
+    [filteredQuestionsByUnit]
+  );
 
   const filterSelectStyle =
-    "border border-gray-300 bg-amber-600 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto";
+    "border border-gray-300 bg-amber-600/90 rounded-md p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto";
 
   return (
     <div className="flex flex-col w-full">
-      <div className="py-4 px-6 rounded-lg mb-6 bg-amber-800 shadow">
-        <h2 className="text-xl font-semibold mb-3 text-gray-400 p-2 text-center">Filter Questions</h2>
+      <p>{user?.initDataUnsafe.user?.username}</p>
+      <div className="py-4 px-6 rounded-lg mb-6 bg-indigo-600 shadow">
+        <h2 className="text-xl font-semibold mb-3 text-gray-400 p-2 text-center">
+          Filter Questions
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
           {/* Subject Filter */}
           {subjects.length > 1 && (
@@ -131,7 +151,9 @@ const QuizFilter = ({ allQuestions }: QuizFilterProps) => {
             >
               {difficulties.map((diff) => (
                 <option key={diff} value={diff}>
-                  {diff === "All" ? "All Difficulties" : diff.charAt(0).toUpperCase() + diff.slice(1)}
+                  {diff === "All"
+                    ? "All Difficulties"
+                    : diff.charAt(0).toUpperCase() + diff.slice(1)}
                 </option>
               ))}
             </select>

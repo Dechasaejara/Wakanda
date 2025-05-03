@@ -12,7 +12,7 @@ export default async function Home() {
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       }}
     >
-      <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+      <h1 className="text-3xl font-bold text-center text-amber-600 mb-6">
         Welcome to the Quiz App
       </h1>
       <QuizFilter allQuestions={allQuestions} />

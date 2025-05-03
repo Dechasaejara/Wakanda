@@ -1,23 +1,27 @@
-Create a detailed set of exam questions for each topic of the unit (). The questions should be organized by topic and difficulty level, maintaining the following ratio:
+Create a detailed set of exam questions for each topic of the unit "Human Body Systems and Health." The questions should be organized by topic and difficulty level, maintaining the following ratio:
+
 Beginner Level: 15 questions (focus on direct recall)
 Intermediate Level: 10 questions (focus on summarization)
 Advanced Level: 5 questions (focus on analysis and deduction)
-For each topic within this unit, ensure there are at least 30 questions total, adhering to the specified ratios for each difficulty level . response based on sample data fromt and and json structure. Each question object should include the following fields:
-- subject - 'Social Studies'
-- unit  - ()
-- topic - ''
-- subtopic - ''
-- gradeLevel - 'Grade 8'
-- type - ['assessment', 'quiz']
-- question - ''
-- options - ['option1', 'option2', 'option3', 'option4']
-- correctAnswer - ''
-- explanation - ''
-- difficulty - beginner, intermediate, advanced
-- language  - eng
-- reference - 'Page 120,'
-- tags - ["tag1", "tag2"]
-- points - 1-5
-- timeLimit - 20 -40 seconds
-UNIT 4: EARLY MODERN AND MODERN WORLD HISTORY
+For each topic within this unit, ensure there are at least 30 questions total, adhering to the specified ratios for each difficulty level. Each question object should include the following fields in a JSON structure:
+
+object structure format:
+{
+  "subject": "Social Studies", // "Science", "Math", etc.
+  "unit": "Unit 4 - Human Body Systems and Health", // "Unit 1 - Geography", etc.
+  "topic": "4.1 Integumentary Systems", // "1.1 Climate", etc.
+  "subtopic": "4.1.1 Components of integumentary system", // "1.1.1 Weather patterns", etc.
+  "gradeLevel": "Grade 8",
+  "type": ["assessment", "quiz"],
+  "question": "", // "What is the capital of France?", etc.
+  "options": ["option1", "option2", "option3", "option4"], // ["Paris", "London", "Berlin", "Madrid"]
+  "correctAnswer": "",// "Paris"
+  "explanation": "",// "The capital of France is Paris because...", etc.
+  "difficulty": "beginner, intermediate, advanced", 
+  "language": "eng",
+  "reference": "Page 120", 
+  "tags": ["tag1", "tag2"],// ["geography", "climate"], etc.
+  "points": 1-5, 
+  "timeLimit": "20-40 seconds" // 25
+}
 Ensure that all questions are clear, concise, and directly related to the content of each topic without assumptions. Avoid using the term "textbook" in any of the questions.
