@@ -70,6 +70,7 @@ export const Profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
+    .unique()
     .references(() => Users.id, { onDelete: "cascade" }),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -292,6 +293,18 @@ export const ChallengeQuestionRelations = relations(
     }),
   })
 );
+
+// Export types
+export type InUser = typeof Users.$inferInsert;
+export type InProfile = typeof Profiles.$inferInsert;
+export type InBadge = typeof Badges.$inferInsert;
+export type InModule = typeof Modules.$inferInsert;
+export type InLesson = typeof Lessons.$inferInsert;
+export type InQuestion = typeof Questions.$inferInsert;
+export type InLeaderboardEntry = typeof Leaderboard.$inferInsert;
+export type InUserProgressEntry = typeof UserProgress.$inferInsert;
+export type InChallenge = typeof Challenges.$inferInsert;
+export type InChallengeQuestion = typeof ChallengeQuestions.$inferInsert;
 
 // Export types
 export type User = typeof Users.$inferSelect;

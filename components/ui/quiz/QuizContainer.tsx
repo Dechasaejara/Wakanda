@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useMemo, useCallback, useState } from "react";
 import Header from "./Header";
 import ProgressBar from "./ProgressBar";
@@ -6,10 +7,10 @@ import Options from "./Options";
 import ResultsScreen from "./ResultsScreen";
 import { useQuiz } from "./hooks/useQuiz";
 import { useTimer } from "./hooks/useTimer";
-import { Question } from "@/backend/db/schema";
+import { Question, InUser, InProfile } from "@/backend/db/schema";
 import { useAppContext } from "@/components/layout/navigation";
 
-interface filteredQuestions {
+interface FilteredQuestions {
   subject: string;
   gradeLevel: string;
   difficulty: string;
@@ -17,17 +18,20 @@ interface filteredQuestions {
   totalQuestions: number;
   topic: string;
 }
+
 interface QuizContainerProps {
   questions: Question[];
-  quiz: filteredQuestions;
+  quiz: FilteredQuestions;
 }
 
 const DEFAULT_TIME_LIMIT = 20;
 
-const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
-  const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
-  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]); // Store filtered questions
-  const user = useAppContext().user; // Assuming you have a context to get user data
+const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAppContext();
+  const telegramUser = user?.initDataUnsafe?.user;
 
   const {
     currentQuestionIndex,
@@ -45,114 +49,48 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
     startQuiz,
     selectAnswer,
     useHint,
-    endQuiz,
     handleIncorrectAnswer,
   } = useQuiz(filteredQuestions);
 
-  const currentQuestion = useMemo(() => {
-    if (
-      !filteredQuestions ||
-      filteredQuestions.length === 0 ||
-      currentQuestionIndex >= filteredQuestions.length
-    ) {
-      return null;
-    }
-    return filteredQuestions[currentQuestionIndex];
-  }, [filteredQuestions, currentQuestionIndex]);
-
-  const handleTimeout = useCallback(() => {
-    if (!isQuizOver && handleIncorrectAnswer) {
-      handleIncorrectAnswer("N/A - Time Ran Out");
-    }
-  }, [isQuizOver, handleIncorrectAnswer]);
+  const currentQuestion = useMemo(
+    () => filteredQuestions[currentQuestionIndex] || null,
+    [filteredQuestions, currentQuestionIndex]
+  );
 
   const timeLimit = useMemo(
     () => currentQuestion?.timeLimit || DEFAULT_TIME_LIMIT,
     [currentQuestion]
   );
 
-  const { timeLeft, startTimer, stopTimer } = useTimer(
-    timeLimit,
-    handleTimeout
-  );
-
-  // useEffect(() => {
-  //   if (isQuizOver) {
-
-  //     stopTimer();
-  //     return;
-  //   }
-
-  //   if (answerStatus === null && currentQuestion) {
-  //     startTimer(currentQuestion.timeLimit || DEFAULT_TIME_LIMIT);
-  //   } else {
-  //     stopTimer();
-  //   }
-  // }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
-
-  useEffect(() => {
-    if (isQuizOver) {
-      stopTimer();
-      return;
+  const { timeLeft, startTimer, stopTimer } = useTimer(timeLimit, () => {
+    if (!isQuizOver) {
+      handleIncorrectAnswer("Time Ran Out");
     }
+  });
 
-    if (answerStatus === null && currentQuestion) {
-      startTimer(currentQuestion.timeLimit || DEFAULT_TIME_LIMIT);
-    } else {
-      stopTimer();
-    }
-  }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer]);
+  // Post user progress to API
+  const postUserProgress = useCallback(async () => {
+    if (!telegramUser?.id) return;
 
-  const progress = useMemo(() => {
-    if (!filteredQuestions || filteredQuestions.length === 0) return 0;
-    return (currentQuestionIndex / filteredQuestions.length) * 100;
-  }, [currentQuestionIndex, filteredQuestions]);
-
-  const isHintDisabled = useMemo(() => {
-    if (
-      hintsAvailable <= 0 ||
-      isQuizOver ||
-      answerStatus !== null ||
-      !currentQuestion?.options
-    )
-      return true;
-
-    const options = Array.isArray(currentQuestion.options)
-      ? currentQuestion.options.map(String)
-      : [];
-    const availableOptions = options.filter(
-      (opt) => !disabledOptions.includes(opt)
-    );
-    return availableOptions.length <= 2;
-  }, [
-    hintsAvailable,
-    isQuizOver,
-    answerStatus,
-    currentQuestion?.options,
-    disabledOptions,
-  ]);
-  const postUserProgress = async () => {
     try {
       const progressData = {
-        userId: user?.initDataUnsafe.user?.id ||  1,
+        userId: telegramUser.id,
         subject: quiz.subject,
         gradeLevel: quiz.gradeLevel,
         difficulty: quiz.difficulty,
         topic: quiz.topic,
         unit: quiz.unit,
         totalQuestions: quiz.totalQuestions,
-        correctAnswers: score / 10, // Assuming each correct answer gives 10 points
+        correctAnswers: score / 10, // Assuming 10 points per correct answer
         score,
-        timeSpent: timeLimit * currentQuestionIndex, // Example: total time spent
+        timeSpent: timeLimit * currentQuestionIndex,
         completed: true,
         completedAt: new Date().toISOString(),
       };
 
       const response = await fetch("/api/userProgress", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
       });
 
@@ -162,101 +100,169 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
     } catch (error) {
       console.error("Error posting user progress:", error);
     }
-  };
-  const handleStartQuiz = () => {
-    if (questions.length > 0) {
-      setFilteredQuestions(questions); // Use all questions or filtered ones
-      setQuizStarted(true); // Mark quiz as started
-      startQuiz(); // Initialize the quiz state
+  }, [telegramUser, quiz, score, timeLimit, currentQuestionIndex]);
+
+  // Post user profile to API
+  const postProfile = useCallback(async (userId: number) => {
+    try {
+      const profile: InProfile = {
+        userId,
+        firstName: telegramUser?.first_name || "",
+        lastName: telegramUser?.last_name || "",
+      };
+
+      const response = await fetch("/api/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to post user profile:", await response.json());
+      }
+    } catch (error) {
+      console.error("Error posting user profile:", error);
     }
-  };
+  }, [telegramUser]);
 
-  const handleRestartQuiz = () => {
+  // Post user data to API
+  const postUser = useCallback(async () => {
+    if (!telegramUser?.id) return;
+
+    try {
+      const userdata: InUser = {
+        code: telegramUser.id.toString(),
+        username: telegramUser.username || "Guest",
+        userImage: telegramUser.photo_url || "",
+        role: "user",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userdata),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to post user:", await response.json());
+      } else {
+        await postProfile(telegramUser.id);
+      }
+    } catch (error) {
+      console.error("Error posting user:", error);
+    }
+  }, [telegramUser, postProfile]);
+
+  // Check if user exists in the database
+  const checkUserExists = useCallback(async () => {
+    if (!telegramUser?.id) return;
+
+    try {
+      const response = await fetch(`/api/user/${telegramUser.id}`);
+      if (!response.ok) {
+        await postUser();
+      }
+    } catch (error) {
+      console.error("Error checking user:", error);
+    }
+  }, [telegramUser, postUser]);
+
+  // Start the quiz
+  const handleStartQuiz = useCallback(() => {
+    if (questions.length === 0) return;
+
+    setIsLoading(true);
+    setFilteredQuestions(questions);
+    setQuizStarted(true);
+    startQuiz();
+    setIsLoading(false);
+  }, [questions, startQuiz]);
+
+  // Restart the quiz
+  const handleRestartQuiz = useCallback(() => {
     postUserProgress();
-    setQuizStarted(false); // Reset the quizStarted state
+    setQuizStarted(false);
+    setIsLoading(true);
     setTimeout(() => {
-      handleStartQuiz(); // Restart the quiz after resetting
-    }, 0); // Ensure state resets before restarting
-  };
+      handleStartQuiz();
+    }, 0);
+  }, [postUserProgress, handleStartQuiz]);
 
-  // --- Rendering Logic ---
+  // Manage timer and quiz state
+  useEffect(() => {
+    if (isQuizOver) {
+      stopTimer();
+      postUserProgress();
+      return;
+    }
 
-  // Show Start Screen if Quiz Hasn't Started
-  if (!quizStarted) {
-    return (
-      <div
-        className="flex justify-center  min-h-screen p-1 font-sans"
-        style={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        }}
-      >
-        <div className="bg-white/90 backdrop-blur-sm p-2 sm:p-1 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Ready to Start the Quiz?
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Click the button below to begin your quiz journey!
-          </p>
-          <button
-            onClick={handleStartQuiz}
-            className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-          >
-            Start Quiz
-          </button>
-        </div>
+    if (answerStatus === null && currentQuestion && !isLoading) {
+      startTimer(currentQuestion.timeLimit || DEFAULT_TIME_LIMIT);
+    } else {
+      stopTimer();
+    }
+  }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer, postUserProgress, isLoading]);
+
+  // Render start screen
+  const renderStartScreen = () => (
+    <div className="flex justify-center min-h-screen p-4 font-sans bg-gradient-to-br from-indigo-500 to-purple-600">
+      <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Ready to Start the Quiz?
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Click the button below to begin your quiz journey!
+        </p>
+        <button
+          onClick={handleStartQuiz}
+          disabled={questions.length === 0}
+          className={`px-6 py-3 rounded-lg font-bold shadow-md transition-all duration-200 ${
+            questions.length === 0
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          }`}
+        >
+          Start Quiz
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Loading or No Questions State
-  if (!currentQuestion && !isQuizOver) {
-    return (
-      <div
-        className="flex justify-center items-center min-h-screen p-4"
-        style={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        }}
-      >
-        <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center text-gray-600">
-          {!filteredQuestions || filteredQuestions.length === 0
-            ? "No questions available."
-            : "Loading quiz..."}
-        </div>
+  // Render loading or no questions screen
+  const renderLoadingScreen = () => (
+    <div className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-br from-indigo-500 to-purple-600">
+      <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center text-gray-600">
+        {isLoading ? "Loading quiz..." : "No questions available."}
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Main Quiz UI
-  return (
-    <div
-      className="flex justify-center  min-h-screen p-4 w-full font-sans"
-      style={{
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      }}
-    >
-      <div className="bg-white/90 backdrop-blur-sm p-4 sm:p-2 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out ">
-        {/* Header */}
+  // Render quiz content
+  const renderQuizContent = () => (
+    <div className="flex justify-center min-h-screen p-4 w-full font-sans bg-gradient-to-br from-indigo-500 to-purple-600">
+      <div className="bg-white/90 backdrop-blur-sm p-4 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out">
         <Header
           score={score}
           lives={lives}
           timeLeft={timeLeft}
           currentQuestionIndex={currentQuestionIndex}
-          totalQuestions={filteredQuestions?.length || 0}
+          totalQuestions={filteredQuestions.length}
         />
-
-        {/* Progress Bar */}
         <ProgressBar
           progress={
-            isQuizOver && resultsTitle === "Quiz Complete!" ? 100 : progress
+            isQuizOver && resultsTitle === "Quiz Complete!"
+              ? 100
+              : (currentQuestionIndex / filteredQuestions.length) * 100
           }
           isFailed={isQuizOver && lives <= 0}
         />
-
-        {/* Conditional Rendering: Quiz Active vs. Results Screen */}
         {!isQuizOver && currentQuestion ? (
-          <div className="mt-2 flex flex-col items-center justify-between">
-            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">{`${currentQuestion.id}. ${currentQuestion.question}`}</h2>
-            ;
+          <div className="mt-4">
+            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">
+              {`${currentQuestion.id}. ${currentQuestion.question}`}
+            </h2>
             <Options
               options={
                 Array.isArray(currentQuestion.options)
@@ -269,13 +275,12 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
               correctAnswer={currentQuestion.correctAnswer}
               disabledOptions={disabledOptions}
             />
-            <div className=" m-auto mt-5 text-center flex gap-4 items-center">
+            <div className="mt-5 text-center flex gap-4 items-center justify-center">
               <button
                 onClick={useHint}
-                disabled={isHintDisabled}
-                aria-label={`Use Hint (${hintsAvailable} left)`}
+                disabled={hintsAvailable <= 0}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  isHintDisabled
+                  hintsAvailable <= 0
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-yellow-400 hover:bg-yellow-500 text-yellow-900 focus:ring-yellow-400"
                 }`}
@@ -292,7 +297,7 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
           </div>
         ) : (
           <ResultsScreen
-            user={user?.initDataUnsafe?.user?.id || 0}
+            user={telegramUser?.id || 0}
             finalScore={score}
             bestScore={bestScore}
             title={resultsTitle}
@@ -300,17 +305,15 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
             restartQuiz={handleRestartQuiz}
           />
         )}
-
-        {/* Feedback Messages */}
         {feedback.message && !isQuizOver && (
           <div
             className={`text-center my-3 p-2 rounded-md font-semibold ${
               feedback.color === "text-red-600"
-                ? "bg-red-100"
+                ? "bg-red-100 text-red-600"
                 : feedback.color === "text-emerald-600"
-                ? "bg-green-100"
-                : "bg-blue-100"
-            } ${feedback.color}`}
+                ? "bg-green-100 text-emerald-600"
+                : "bg-blue-100 text-blue-600"
+            }`}
           >
             {feedback.message}
           </div>
@@ -318,6 +321,23 @@ const QuizContainer = ({ questions, quiz }: QuizContainerProps) => {
       </div>
     </div>
   );
+
+  // Initial user check
+  useEffect(() => {
+    if (!quizStarted) {
+      checkUserExists();
+    }
+  }, [quizStarted, checkUserExists]);
+
+  if (!quizStarted) {
+    return renderStartScreen();
+  }
+
+  if (!currentQuestion && !isQuizOver) {
+    return renderLoadingScreen();
+  }
+
+  return renderQuizContent();
 };
 
 export default QuizContainer;
