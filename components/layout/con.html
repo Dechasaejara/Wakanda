@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamMatch - Connect & Compete</title>
+    <link href="/path/to/your/tailwind.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                primary: {
+                  DEFAULT: '#5D5CDE',
+                  dark: '#4b4acb',
+                },
+                accent: {
+                  blue: '#3498db',
+                  green: '#2ecc71',
+                  red: '#e74c3c',
+                  yellow: '#f1c40f',
+                }
+              }
+            }
+          }
+        }
+    </script>
+    <style>
+        body {
+            @apply bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased">
+
+    <header class="hidden md:flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+        <div class="text-2xl font-bold text-primary">TeamMatch</div>
+        <nav class="space-x-6">
+            <a href="#hero" class="hover:text-primary transition duration-200">Home</a>
+            <a href="#challenges" class="hover:text-primary transition duration-200">Challenges</a>
+            <a href="#teams" class="hover:text-primary transition duration-200">Teams</a>
+            <a href="#achievements" class="hover:text-primary transition duration-200">Achievements</a>
+            <a href="#" class="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-primary-dark transition duration-200">Connect Telegram</a>
+            <button title="Toggle Dark Mode" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                <svg class="h-5 w-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                <svg class="h-5 w-5 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-1.646 4.354a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM4.464 4.95l-.707-.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 101.414-1.414zM3 11a1 1 0 100 2H2a1 1 0 100-2h1zM6.05 15.036A1 1 0 004.636 13.62l-.707.707a1 1 0 001.414 1.414l.707-.707z"></path></svg>
+            </button>
+        </nav>
+    </header>
+
+    <main class="pb-20 md:pb-0">
+
+        <section id="hero" class="bg-gradient-to-b from-primary/10 dark:from-primary/20 to-transparent pt-24 pb-16 md:pt-32 md:pb-24 text-center">
+            <div class="container mx-auto px-4">
+                <h1 class="text-4xl md:text-6xl font-bold mb-4 text-gray-900 dark:text-white">
+                    <span class="text-primary">TeamMatch:</span> Spontaneous Fun, Real Connections.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Jump into random team challenges! We match you with new people based on your vibe for fun activities, shared goals, and friendly competition. No pressure, just play.
+                </p>
+                <a href="#challenges" class="bg-primary text-white px-8 py-3 rounded-full font-semibold text-lg hover:bg-primary-dark transition duration-300 inline-block shadow-lg">
+                    Find Your First Challenge!
+                </a>
+                <div class="mt-12 flex justify-center items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <span>[ICON] Based on Interests</span>
+                    <span>[ICON] Skill Matching</span>
+                    <span>[ICON] Gamified Progress</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="challenges" class="py-16 lg:py-24">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Ready for Action? Pick a Challenge!</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-3">[🎨]</span> <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Creative Jam Session</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4 flex-grow">Unleash your team's artistic side. Collaborate on a story, design, or music piece.</p>
+                        <div class="text-xs space-x-2 mb-4">
+                            <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">#Creativity</span>
+                            <span class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full">#BeginnerFriendly</span>
+                        </div>
+                        <button class="w-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/80 px-4 py-2 rounded-lg font-semibold hover:bg-primary/20 dark:hover:bg-primary/30 transition duration-200 mt-auto">Join Challenge</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-3">[🧩]</span> <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Logic Puzzle Gauntlet</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4 flex-grow">Test your team's wits against a series of brain teasers and logic puzzles.</p>
+                        <div class="text-xs space-x-2 mb-4">
+                            <span class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded-full">#ProblemSolving</span>
+                            <span class="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded-full">#Competitive</span>
+                        </div>
+                        <button class="w-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/80 px-4 py-2 rounded-lg font-semibold hover:bg-primary/20 dark:hover:bg-primary/30 transition duration-200 mt-auto">Join Challenge</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-3">[🗺️]</span> <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Virtual Scavenger Hunt</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4 flex-grow">Explore the web together to find clues and complete objectives before time runs out.</p>
+                        <div class="text-xs space-x-2 mb-4">
+                            <span class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full">#Exploration</span>
+                            <span class="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-2 py-1 rounded-full">#Teamwork</span>
+                        </div>
+                        <button class="w-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/80 px-4 py-2 rounded-lg font-semibold hover:bg-primary/20 dark:hover:bg-primary/30 transition duration-200 mt-auto">Join Challenge</button>
+                    </div>
+                </div>
+                <div class="text-center mt-12">
+                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-full font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200">
+                        Show Me More Random Challenges! [🎲]
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="team-formation" class="py-16 lg:py-24 bg-primary/5 dark:bg-primary/10">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Your Teams & Matches</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                    <div class="md:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Your Current Squad</h3>
+                        <div class="text-center mb-4">
+                            <img src="https://via.placeholder.com/80" alt="Team Emblem" class="w-20 h-20 rounded-full mx-auto mb-2 border-2 border-primary object-cover" loading="lazy">
+                            <h4 class="font-semibold text-lg">The Pixel Pioneers</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Current Challenge: Creative Jam</p>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <p class="text-sm font-medium">Members:</p>
+                            <ul class="flex flex-wrap gap-2">
+                                <li class="flex items-center text-xs bg-gray-100 dark:bg-gray-700 p-1 rounded-full">
+                                    <img src="https://images.pexels.com/photos/842980/pexels-photo-842980.jpeg" class="w-6 h-6 rounded-full mr-1 object-cover" alt="User Avatar" loading="lazy"> You
+                                </li>
+                                <li class="flex items-center text-xs bg-gray-100 dark:bg-gray-700 p-1 rounded-full">
+                                    <img src="https://via.placeholder.com/24" class="w-6 h-6 rounded-full mr-1" alt="User Avatar" loading="lazy"> Alex
+                                </li>
+                                <li class="flex items-center text-xs bg-gray-100 dark:bg-gray-700 p-1 rounded-full">
+                                    <img src="https://via.placeholder.com/24" class="w-6 h-6 rounded-full mr-1" alt="User Avatar" loading="lazy"> Sam
+                                </li>
+                            </ul>
+                        </div>
+                        <button class="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition duration-200 text-sm">
+                            [↔️] Swap to Another Team
+                        </button>
+                        <p class="text-xs text-center mt-2 text-gray-500 dark:text-gray-400">You can join multiple challenges!</p>
+                    </div>
+
+                    <div class="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Explore Other Challenges & Teams</h3>
+                        <div class="space-y-4">
+                            <div class="border dark:border-gray-700 p-4 rounded-lg flex items-center justify-between gap-4 bg-gray-50 dark:bg-gray-700/50">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://via.placeholder.com/50" alt="Team Emblem" class="w-12 h-12 rounded-full border-2 border-accent-green" loading="lazy">
+                                    <div>
+                                        <h4 class="font-semibold">Logic Legends</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Challenge: Puzzle Gauntlet</p>
+                                        <div class="text-xs mt-1">Compatibility: <span class="font-bold text-green-500">85%</span></div>
+                                    </div>
+                                </div>
+                                <button class="bg-primary text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-primary-dark transition duration-200 whitespace-nowrap">Join Group</button>
+                            </div>
+                            <div class="border dark:border-gray-700 p-4 rounded-lg flex items-center justify-between gap-4 bg-gray-50 dark:bg-gray-700/50">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://via.placeholder.com/50" alt="Team Emblem" class="w-12 h-12 rounded-full border-2 border-accent-blue" loading="lazy">
+                                    <div>
+                                        <h4 class="font-semibold">Web Wanderers</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Challenge: Scavenger Hunt</p>
+                                        <div class="text-xs mt-1">Compatibility: <span class="font-bold text-blue-500">70%</span></div>
+                                    </div>
+                                </div>
+                                <button class="bg-primary text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-primary-dark transition duration-200 whitespace-nowrap">Join Group</button>
+                            </div>
+                            <div class="border border-dashed dark:border-gray-600 p-4 rounded-lg text-center bg-gray-50 dark:bg-gray-700/50">
+                                <p class="text-gray-600 dark:text-gray-400 mb-2">Ready for something completely new?</p>
+                                <button class="bg-primary/80 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary transition duration-200 text-sm">
+                                    Find a Random Match [✨]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="achievements" class="py-16 lg:py-24">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Your Progress & Glory</h2>
+                <div class="flex justify-center mb-8 space-x-4 border-b dark:border-gray-700">
+                    <button class="pb-2 border-b-2 border-primary text-primary font-semibold">Badges</button>
+                    <button class="pb-2 border-b-2 border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 font-semibold">Leaderboards</button>
+                    <button class="pb-2 border-b-2 border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 font-semibold">Stats</button>
+                </div>
+
+                <div class="mb-12">
+                    <h3 class="text-xl font-semibold text-center mb-6">Earned Badges</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 text-center">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-3xl mb-1 shadow-md">[🏆]</div>
+                            <span class="text-xs font-semibold">First Win</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-primary rounded-full flex items-center justify-center text-3xl mb-1 shadow-md">[🤝]</div>
+                            <span class="text-xs font-semibold">Team Player</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-3xl mb-1 shadow-md">[💡]</div>
+                            <span class="text-xs font-semibold">Idea Spark</span>
+                        </div>
+                        <div class="flex flex-col items-center opacity-40">
+                            <div class="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-3xl mb-1">[🔒]</div>
+                            <span class="text-xs font-semibold">Challenge Master</span>
+                        </div>
+                        <div class="flex flex-col items-center opacity-40">
+                            <div class="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-3xl mb-1">[🔒]</div>
+                            <span class="text-xs font-semibold">Top Competitor</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden">
+                    <h3 class="text-xl font-semibold text-center mb-6">Weekly Leaderboard</h3>
+                    <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <div class="flex justify-between text-sm font-semibold text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 pb-2 mb-4">
+                            <span>Rank</span>
+                            <span>Player / Team</span>
+                            <span>Points</span>
+                        </div>
+                        <ul class="space-y-3">
+                            <li class="flex justify-between items-center font-semibold bg-primary/10 dark:bg-primary/20 p-2 rounded">
+                                <span>#1 [🥇]</span>
+                                <span class="flex items-center gap-2"> <img src="https://via.placeholder.com/24" class="w-6 h-6 rounded-full" alt="Avatar" loading="lazy"> Logic Legends</span>
+                                <span>1550 pts</span>
+                            </li>
+                            <li class="flex justify-between items-center">
+                                <span>#2 [🥈]</span>
+                                <span class="flex items-center gap-2"> <img src="https://images.pexels.com/photos/842980/pexels-photo-842980.jpeg" class="w-6 h-6 rounded-full" alt="Avatar" loading="lazy"> You (Pixel Pioneers)</span>
+                                <span>1420 pts</span>
+                            </li>
+                            <li class="flex justify-between items-center">
+                                <span>#3 [🥉]</span>
+                                <span class="flex items-center gap-2"> <img src="https://via.placeholder.com/24" class="w-6 h-6 rounded-full" alt="Avatar" loading="lazy"> Web Wanderers</span>
+                                <span>1380 pts</span>
+                            </li>
+                            <li class="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                                <span>#4</span>
+                                <span class="flex items-center gap-2"> <img src="https://via.placeholder.com/24" class="w-6 h-6 rounded-full" alt="Avatar" loading="lazy"> Creative Crew</span>
+                                <span>1200 pts</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-12 max-w-xl mx-auto">
+                    <p class="text-center text-sm font-medium mb-2">Overall Progress: Level 5</p>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 shadow-inner">
+                        <div class="bg-gradient-to-r from-accent-green to-primary h-4 rounded-full" style="width: 65%;"></div>
+                    </div>
+                    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">1200 / 1800 XP to Level 6</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="teams" class="py-16 lg:py-24 bg-gray-50 dark:bg-gray-800/50">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Explore Active Teams</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center text-center">
+                        <img src="https://via.placeholder.com/60" alt="Team Emblem" class="w-16 h-16 rounded-full mb-3 border-2 border-accent-red" loading="lazy">
+                        <h4 class="font-semibold text-lg mb-1">Code Crusaders</h4>
+                        <p class="text-sm text-primary mb-2 font-medium">[💻] Tech Challenges</p>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <span>[👥] 4 Members</span> | <span>Rep: ★★★★☆</span>
+                        </div>
+                        <button class="w-full mt-auto bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">View Profile</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center text-center">
+                        <img src="https://via.placeholder.com/60" alt="Team Emblem" class="w-16 h-16 rounded-full mb-3 border-2 border-accent-yellow" loading="lazy">
+                        <h4 class="font-semibold text-lg mb-1">Puzzle Masters</h4>
+                        <p class="text-sm text-primary mb-2 font-medium">[🧩] Logic & Puzzles</p>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <span>[👥] 3 Members</span> | <span>Rep: ★★★★★</span>
+                        </div>
+                        <button class="w-full mt-auto bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">View Profile</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center text-center">
+                        <img src="https://via.placeholder.com/60" alt="Team Emblem" class="w-16 h-6 rounded-full mb-3 border-2 border-accent-green" loading="lazy">
+                        <h4 class="font-semibold text-lg mb-1">Nature Navigators</h4>
+                        <p class="text-sm text-primary mb-2 font-medium">[🌿] Outdoor Sims</p>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <span>[👥] 5 Members</span> | <span>Rep: ★★★★☆</span>
+                        </div>
+                        <button class="w-full mt-auto bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">View Profile</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center text-center">
+                        <img src="https://via.placeholder.com/60" alt="Team Emblem" class="w-16 h-16 rounded-full mb-3 border-2 border-accent-blue" loading="lazy">
+                        <h4 class="font-semibold text-lg mb-1">Story Weavers</h4>
+                        <p class="text-sm text-primary mb-2 font-medium">[✍️] Creative Writing</p>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <span>[👥] 3 Members</span> | <span>Rep: ★★★★☆</span>
+                        </div>
+                        <button class="w-full mt-auto bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">View Profile</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="upcoming" class="py-16 lg:py-24">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">What's Next? Upcoming Events!</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gradient-to-r from-primary to-purple-600 p-6 rounded-xl shadow-lg text-white relative overflow-hidden">
+                        <div class="absolute -top-4 -right-4 text-6xl opacity-10">[🏆]</div>
+                        <h3 class="text-2xl font-bold mb-2">Season 1: Team Tournament</h3>
+                        <p class="text-purple-100 mb-4 text-sm">Compete head-to-head in a series of challenges for ultimate glory and exclusive rewards!</p>
+                        <div class="bg-black/20 p-3 rounded-lg mb-4">
+                            <p class="text-sm font-semibold">Starts In:</p>
+                            <div class="text-2xl font-bold flex items-center gap-2">
+                                [⏱️] 3 Days, 10 Hours
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full">Limited-Time Badges!</span>
+                            <a href="#" class="bg-white text-primary px-4 py-1 rounded-full text-sm font-semibold hover:bg-gray-100 transition duration-200">Learn More</a>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-dashed border-accent-green dark:border-accent-green/50">
+                        <h3 class="text-xl font-semibold mb-2 text-green-600 dark:text-green-400">Special Mission: Community Build</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4 text-sm">Collaborate with multiple teams on a shared project. Earns the 'Community Spirit' reward!</p>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500 dark:text-gray-400">[📅] Starts Next Monday</span>
+                            <span class="text-green-500 font-semibold">[🤝] High Teamwork Focus</span>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-xs font-medium mb-1">Team Sign-up Rate:</p>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                <div class="bg-accent-green h-2.5 rounded-full" style="width: 45%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="highlights" class="py-16 lg:py-24 bg-primary/5 dark:bg-primary/10">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Community Buzz: Success Stories</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                        <img src="https://via.placeholder.com/400x200/cccccc/888888?text=Team+Activity+Image" class="w-full h-32 sm:h-40 object-cover" alt="Team Activity" loading="lazy">
+                        <div class="p-5">
+                            <h4 class="font-semibold mb-1">Pixel Pioneers' Art Collab</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">"We had never met, but we created something amazing together in just an hour! So much fun."</p>
+                            <span class="text-xs bg-primary/10 text-primary dark:bg-primary/90 dark:text-primary-light px-2 py-1 rounded-full">[🎨] Creative Jam</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                        <img src="https://via.placeholder.com/400x200/cccccc/888888?text=Team+Activity+Image" class="w-full h-32 sm:h-40 object-cover" alt="Team Activity" loading="lazy">
+                        <div class="p-5">
+                            <h4 class="font-semibold mb-1">Logic Legends' Close Call</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">"That last puzzle was tough, but we solved it with seconds to spare! Intense teamwork."</p>
+                            <span class="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded-full">[🧩] Puzzle Gauntlet</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                        <img src="https://via.placeholder.com/400x200/cccccc/888888?text=Team+Activity+Image" class="w-full h-32 sm:h-40 object-cover" alt="Team Activity" loading="lazy">
+                        <div class="p-5">
+                            <h4 class="font-semibold mb-1">Explorers' Virtual Discovery</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">"Found some really cool hidden gems online during the scavenger hunt. Great way to connect."</p>
+                            <span class="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full">[🗺️] Scavenger Hunt</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-200 dark:bg-gray-800 text-center py-8">
+        <div class="container mx-auto px-4 text-sm text-gray-600 dark:text-gray-400">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="hover:text-primary">About</a>
+                <a href="#" class="hover:text-primary">Telegram Integration</a>
+                <a href="#" class="hover:text-primary">Privacy Policy</a>
+                <a href="#" class="hover:text-primary">Terms of Service</a>
+            </div>
+            <p>© 2025 TeamMatch. All rights reserved. Let's play!</p>
+            <div class="fixed top-5 right-5 hidden md:block">
+                <span class="relative inline-block">
+                    <svg class="h-6 w-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341A6.002 6.002 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span class="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white dark:ring-gray-800 bg-red-500"></span>
+                </span>
+            </div>
+        </div>
+    </footer>
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex justify-around items-center p-2 shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-50">
+        <a href="#hero" class="flex flex-col items-center text-primary p-2">
+            <span class="text-xl">[🏠]</span>
+            <span class="text-xs font-medium">Home</span>
+        </a>
+        <a href="#challenges" class="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-primary p-2">
+            <span class="text-xl">[🏆]</span>
+            <span class="text-xs font-medium">Challenges</span>
+        </a>
+        <a href="#team-formation" class="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-primary p-2 relative">
+            <span class="text-xl">[👥]</span>
+            <span class="text-xs font-medium">Teams</span>
+            <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+        </a>
+        <a href="#achievements" class="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-primary p-2">
+            <span class="text-xl">[⭐]</span>
+            <span class="text-xs font-medium">Awards</span>
+        </a>
+        <a href="#" class="flex flex-col items-center text-gray-600 dark:text-gray-400 hover:text-primary p-2">
+            <span class="text-xl">[👤]</span>
+            <span class="text-xs font-medium">Profile</span>
+        </a>
+    </nav>
+
+</body>
+</html>

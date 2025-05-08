@@ -7,7 +7,7 @@ export default async function Home() {
 
   return (
     <main
-      className="container mx-auto py-8 px-4 sm:px-6 lg:px-8"
+      className="container mx-auto py-8 px-2 sm:px-1 lg:px-8"
       style={{
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       }}

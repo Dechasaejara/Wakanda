@@ -24,7 +24,7 @@ export function useQuiz(
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>(null); // null | 'correct' | 'incorrect'
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
-  const [feedback, setFeedback] = useState<{ message: string; color: string }>({ message: "", color: "" });
+  const [feedback, setFeedback] = useState<{ message: string; color: string,type:string }>({ message: "", color: "" , type:""});
   const [isQuizOver, setIsQuizOver] = useState(false);
   const [resultsTitle, setResultsTitle] = useState("");
   const [resultsMessage, setResultsMessage] = useState("");
@@ -70,7 +70,7 @@ export function useQuiz(
     setAnswerStatus(null);
     setSelectedOption(null);
     setDisabledOptions([]);
-    setFeedback({ message: "", color: "" });
+    setFeedback({ message: "", color: "", type:"" });
     setResultsTitle("");
     setResultsMessage("");
     isInitialized.current = true;
@@ -139,14 +139,14 @@ export function useQuiz(
           setAnswerStatus(null);
           setSelectedOption(null);
           setDisabledOptions([]); // Reset hints for the new question
-          setFeedback({ message: "", color: "" });
+          setFeedback({ message: "", color: "" ,type:"" });
           setCurrentQuestionIndex((prev) => prev + 1);
      }
   }, [currentQuestionIndex, quizData, endQuiz]);
 
   const handleCorrectAnswer = useCallback(() => {
     setScore((prev) => prev + SCORE_INCREMENT);
-    setFeedback({ message: "Correct!", color: "text-emerald-600" });
+    setFeedback({ message: "Correct!", color: "text-emerald-600" ,type:"correct" });
     // Schedule moving to the next question
     timeoutRef.current = setTimeout(nextQuestion, FEEDBACK_DISPLAY_TIME_MS);
   }, [nextQuestion]); // Depends on nextQuestion identity
@@ -159,7 +159,7 @@ export function useQuiz(
     const message = correctAnswer === "N/A - Time Ran Out"
       ? "Time's up!"
       : `Incorrect! The correct answer was ${correctAnswer}`;
-    setFeedback({ message: message, color: "text-red-600" });
+    setFeedback({ message: message, color: "text-red-600" ,type:"incorrect" });
 
     // Schedule moving to the next question (lives don't end the quiz anymore)
     timeoutRef.current = setTimeout(nextQuestion, FEEDBACK_DISPLAY_TIME_MS);
@@ -207,11 +207,13 @@ export function useQuiz(
        setFeedback({
             message: `Hint used! ${currentQuestion.explanation || 'An incorrect option was removed.'}`,
             color: "text-blue-600",
+            type:"hint"
        });
     } else {
          setFeedback({
             message: "Hint cannot remove more options.", // Provide feedback if hint can't be used
             color: "text-orange-600",
+            type:"hint"
          });
     }
   }, [hintsAvailable, isQuizOver, answerStatus, quizData, currentQuestionIndex, disabledOptions]);

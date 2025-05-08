@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useCallback, useState } from "react";
+import React, { useEffect, useMemo, useCallback, useState, lazy, Suspense } from "react";
 import Header from "./Header";
 import ProgressBar from "./ProgressBar";
 import Options from "./Options";
@@ -10,13 +10,24 @@ import { useTimer } from "./hooks/useTimer";
 import { Question, InUser, InProfile } from "@/backend/db/schema";
 import { useAppContext } from "@/components/layout/navigation";
 
+// Icon imports
+import { 
+  PlayCircleIcon, 
+  LightBulbIcon, 
+  ArrowPathIcon, 
+  InformationCircleIcon,
+  ClockIcon,
+  XMarkIcon,
+  CheckIcon
+} from "@heroicons/react/24/outline";
+
 interface FilteredQuestions {
-  subject: string;
-  gradeLevel: string;
-  difficulty: string;
-  unit: string;
+  subject?: string;
+  gradeLevel?: string;
+  difficulty?: string;
+  unit?: string;
   totalQuestions: number;
-  topic: string;
+  topic?: string;
 }
 
 interface QuizContainerProps {
@@ -24,12 +35,13 @@ interface QuizContainerProps {
   quiz: FilteredQuestions;
 }
 
-const DEFAULT_TIME_LIMIT = 20;
+const DEFAULT_TIME_LIMIT = 20; // seconds
 
 const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   const [quizStarted, setQuizStarted] = useState(false);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showingHint, setShowingHint] = useState(false);
   const { user } = useAppContext();
   const telegramUser = user?.initDataUnsafe?.user;
 
@@ -63,72 +75,68 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   );
 
   const { timeLeft, startTimer, stopTimer } = useTimer(timeLimit, () => {
-    if (!isQuizOver) {
+    if (!isQuizOver && quizStarted) {
       handleIncorrectAnswer("Time Ran Out");
     }
   });
 
-  // Post user progress to API
+  // Calculate time progress percentage
+  const timeProgress = useMemo(() => {
+    if (!timeLimit) return 100;
+    return (timeLeft / timeLimit) * 100;
+  }, [timeLeft, timeLimit]);
+
+  // API call functions
   const postUserProgress = useCallback(async () => {
-    if (!telegramUser?.id) return;
+    if (!telegramUser?.id || !quizStarted) return;
 
     try {
       const progressData = {
         userId: telegramUser.id,
-        subject: quiz.subject,
-        gradeLevel: quiz.gradeLevel,
-        difficulty: quiz.difficulty,
-        topic: quiz.topic,
-        unit: quiz.unit,
+        subject: quiz.subject === "All" ? undefined : quiz.subject,
+        gradeLevel: quiz.gradeLevel === "All" ? undefined : quiz.gradeLevel,
+        difficulty: quiz.difficulty === "All" ? undefined : quiz.difficulty,
+        topic: quiz.topic === "All" ? undefined : quiz.topic,
+        unit: quiz.unit === "All" ? undefined : quiz.unit,
         totalQuestions: quiz.totalQuestions,
-        correctAnswers: score / 10, // Assuming 10 points per correct answer
+        correctAnswers: score / 10,
         score,
-        timeSpent: timeLimit * currentQuestionIndex,
+        timeSpent: timeLimit * (currentQuestionIndex +1),
         completed: true,
         completedAt: new Date().toISOString(),
       };
-
       const response = await fetch("/api/userProgress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
       });
-
-      if (!response.ok) {
-        console.error("Failed to post user progress:", await response.json());
-      }
+      if (!response.ok) console.error("Failed to post user progress:", await response.json());
     } catch (error) {
       console.error("Error posting user progress:", error);
     }
-  }, [telegramUser, quiz, score, timeLimit, currentQuestionIndex]);
+  }, [telegramUser, quiz, score, timeLimit, currentQuestionIndex, quizStarted]);
 
-  // Post user profile to API
   const postProfile = useCallback(async (userId: number) => {
+    if (!telegramUser) return;
     try {
       const profile: InProfile = {
         userId,
-        firstName: telegramUser?.first_name || "",
-        lastName: telegramUser?.last_name || "",
+        firstName: telegramUser.first_name || "",
+        lastName: telegramUser.last_name || "",
       };
-
       const response = await fetch("/api/profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profile),
       });
-
-      if (!response.ok) {
-        console.error("Failed to post user profile:", await response.json());
-      }
+      if (!response.ok) console.error("Failed to post user profile:", await response.json());
     } catch (error) {
       console.error("Error posting user profile:", error);
     }
   }, [telegramUser]);
 
-  // Post user data to API
   const postUser = useCallback(async () => {
     if (!telegramUser?.id) return;
-
     try {
       const userdata: InUser = {
         code: telegramUser.id.toString(),
@@ -138,13 +146,11 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
       const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userdata),
       });
-
       if (!response.ok) {
         console.error("Failed to post user:", await response.json());
       } else {
@@ -155,10 +161,11 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     }
   }, [telegramUser, postProfile]);
 
-  // Check if user exists in the database
   const checkUserExists = useCallback(async () => {
-    if (!telegramUser?.id) return;
-
+    if (!telegramUser?.id) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const response = await fetch(`/api/user/${telegramUser.id}`);
       if (!response.ok) {
@@ -166,31 +173,45 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       }
     } catch (error) {
       console.error("Error checking user:", error);
+    } finally {
+      if (questions.length > 0) setIsLoading(false);
     }
-  }, [telegramUser, postUser]);
+  }, [telegramUser, postUser, questions.length]);
 
-  // Start the quiz
   const handleStartQuiz = useCallback(() => {
-    if (questions.length === 0) return;
-
+    if (questions.length === 0) {
+      console.log("No questions to start quiz.");
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setFilteredQuestions(questions);
-    setQuizStarted(true);
     startQuiz();
-    setIsLoading(false);
+    setQuizStarted(true);
+    setTimeout(() => setIsLoading(false), 300);
   }, [questions, startQuiz]);
 
-  // Restart the quiz
   const handleRestartQuiz = useCallback(() => {
-    postUserProgress();
-    setQuizStarted(false);
-    setIsLoading(true);
-    setTimeout(() => {
-      handleStartQuiz();
-    }, 0);
-  }, [postUserProgress, handleStartQuiz]);
+    if(isQuizOver) postUserProgress();
 
-  // Manage timer and quiz state
+    setIsLoading(true);
+    setQuizStarted(false);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+  }, [isQuizOver, postUserProgress]);
+  
+  const handleHintClick = useCallback(() => {
+    setShowingHint(true);
+    useHint();
+  }, [useHint]);
+
+  useEffect(() => {
+    if (!quizStarted) {
+      checkUserExists();
+    }
+  }, [quizStarted, checkUserExists]);
+
   useEffect(() => {
     if (isQuizOver) {
       stopTimer();
@@ -198,71 +219,200 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       return;
     }
 
-    if (answerStatus === null && currentQuestion && !isLoading) {
+    if (quizStarted && !isLoading && currentQuestion && answerStatus === null) {
       startTimer(currentQuestion.timeLimit || DEFAULT_TIME_LIMIT);
     } else {
       stopTimer();
     }
-  }, [isQuizOver, answerStatus, currentQuestion, startTimer, stopTimer, postUserProgress, isLoading]);
+  }, [isQuizOver, quizStarted, isLoading, currentQuestion, answerStatus, startTimer, stopTimer, postUserProgress]);
 
-  // Render start screen
+  // Add font styles
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse-ring {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.8;
+        }
+        50% {
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1.2);
+          opacity: 0;
+        }
+      }
+      @keyframes slide-in-bottom {
+        from { 
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to { 
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes scale-in {
+        from { 
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to { 
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pulse-ring:before {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border-radius: inherit;
+        background: currentColor;
+        opacity: 0.3;
+        z-index: -1;
+        animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+      }
+      .animate-slide-in-bottom {
+        animation: slide-in-bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      }
+      .animate-scale-in {
+        animation: scale-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      }
+      
+      /* Timer animation */
+      @keyframes timer-warn {
+        0%, 100% { background-color: rgb(245, 158, 11); }
+        50% { background-color: rgb(252, 211, 77); }
+      }
+      .animate-timer-warn {
+        animation: timer-warn 1s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const renderStartScreen = () => (
-    <div className="flex justify-center min-h-screen p-4 font-sans bg-gradient-to-br from-indigo-500 to-purple-600">
-      <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Ready to Start the Quiz?
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-1">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
+        <div className="relative inline-block mx-auto">
+          <div className="absolute inset-0 bg-teal-400 rounded-full blur-xl opacity-25 animate-pulse"></div>
+          <PlayCircleIcon className="h-24 w-24 text-teal-500 dark:text-teal-400 relative animate-pulse-ring" />
+        </div>
+        
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white font-heading">
+          Ready to Challenge Yourself?
         </h2>
-        <p className="text-gray-600 mb-6">
-          Click the button below to begin your quiz journey!
+        
+        <p className="text-slate-600 dark:text-slate-300 text-lg max-w-md mx-auto">
+          You have {questions.length} question{questions.length === 1 ? "" : "s"} waiting. 
+          Let's see how well you do!
         </p>
+        
         <button
           onClick={handleStartQuiz}
-          disabled={questions.length === 0}
-          className={`px-6 py-3 rounded-lg font-bold shadow-md transition-all duration-200 ${
-            questions.length === 0
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          disabled={questions.length === 0 || isLoading}
+          className={`w-full py-4 px-6 rounded-xl text-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] ${
+            questions.length === 0 || isLoading
+              ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+              : "bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 text-white shadow-lg shadow-teal-500/20 dark:shadow-teal-600/20"
           }`}
         >
-          Start Quiz
+          {isLoading ? (
+            <span className="inline-flex items-center">
+              <ArrowPathIcon className="h-5 w-5 mr-2 animate-spin" />
+              Preparing...
+            </span>
+          ) : (
+            <span className="inline-flex items-center">
+              <PlayCircleIcon className="h-5 w-5 mr-2" />
+              Start Quiz
+            </span>
+          )}
         </button>
+        
+        {questions.length === 0 && !isLoading && (
+          <p className="text-sm text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg">
+            No questions available for this selection. Please try different filters.
+          </p>
+        )}
       </div>
     </div>
   );
 
-  // Render loading or no questions screen
   const renderLoadingScreen = () => (
-    <div className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-br from-indigo-500 to-purple-600">
-      <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto text-center text-gray-600">
-        {isLoading ? "Loading quiz..." : "No questions available."}
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-1">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-700 animate-pulse">
+        <div className="relative mx-auto w-20 h-20 mb-6">
+          <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-700"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-teal-500 dark:border-teal-400 border-l-transparent animate-spin"></div>
+        </div>
+        <p className="text-xl text-slate-600 dark:text-slate-300 font-medium">
+          {isLoading && !quizStarted && questions.length > 0 ? "Preparing your quiz..." :
+           isLoading ? "Loading..." :
+           "No questions available."}
+        </p>
       </div>
     </div>
   );
 
-  // Render quiz content
   const renderQuizContent = () => (
-    <div className="flex justify-center min-h-screen p-4 w-full font-sans bg-gradient-to-br from-indigo-500 to-purple-600">
-      <div className="bg-white/90 backdrop-blur-sm p-4 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out">
-        <Header
-          score={score}
-          lives={lives}
-          timeLeft={timeLeft}
-          currentQuestionIndex={currentQuestionIndex}
-          totalQuestions={filteredQuestions.length}
-        />
-        <ProgressBar
-          progress={
-            isQuizOver && resultsTitle === "Quiz Complete!"
-              ? 100
-              : (currentQuestionIndex / filteredQuestions.length) * 100
-          }
-          isFailed={isQuizOver && lives <= 0}
-        />
+    <div className="py-4 px-1 animate-slide-in-bottom">
+      <div className="w-full max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 border border-slate-100 dark:border-slate-700">
+        <div className="space-y-6">
+          <Header
+            score={score}
+            lives={lives}
+            timeLeft={timeLeft}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={filteredQuestions.length}
+          />
+          
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+              <span>Question {currentQuestionIndex + 1} of {filteredQuestions.length}</span>
+              <div className="flex items-center">
+                <ClockIcon className="h-4 w-4 mr-1" />
+                <span className={`font-medium ${timeLeft < 5 ? 'text-amber-500 dark:text-amber-400' : ''}`}>
+                  {timeLeft}s left
+                </span>
+              </div>
+            </div>
+            
+            <ProgressBar
+              progress={
+                (isQuizOver && resultsTitle === "Quiz Complete!") || (currentQuestionIndex +1 >= filteredQuestions.length && feedback.message)
+                  ? 100
+                  : ((currentQuestionIndex +1) / filteredQuestions.length) * 100
+              }
+              isFailed={isQuizOver && lives <= 0}
+            />
+            
+            {/* Time bar below progress bar */}
+            <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-1000 ease-linear rounded-full ${
+                  timeProgress > 50 
+                    ? 'bg-teal-500 dark:bg-teal-400' 
+                    : timeProgress > 25 
+                      ? 'bg-amber-500 dark:bg-amber-400' 
+                      : 'bg-rose-500 dark:bg-rose-400 animate-timer-warn'
+                }`}
+                style={{ width: `${timeProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+        
         {!isQuizOver && currentQuestion ? (
-          <div className="mt-4">
-            <h2 className="text-xl font-semibold mb-5 text-center text-gray-700">
-              {`${currentQuestion.id}. ${currentQuestion.question}`}
+          <div className="space-y-6 mt-8">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white text-center font-heading leading-relaxed">
+              {currentQuestion.question}
             </h2>
+            
             <Options
               options={
                 Array.isArray(currentQuestion.options)
@@ -275,23 +425,31 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               correctAnswer={currentQuestion.correctAnswer}
               disabledOptions={disabledOptions}
             />
-            <div className="mt-5 text-center flex gap-4 items-center justify-center">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
               <button
-                onClick={useHint}
-                disabled={hintsAvailable <= 0}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  hintsAvailable <= 0
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-yellow-400 hover:bg-yellow-500 text-yellow-900 focus:ring-yellow-400"
-                }`}
+                onClick={handleHintClick}
+                disabled={hintsAvailable <= 0 || !!selectedOption}
+                className={`relative flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all
+                  ${hintsAvailable <= 0 || !!selectedOption 
+                    ? "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed" 
+                    : "bg-amber-400 hover:bg-amber-500 text-amber-900 shadow hover:shadow-amber-200/50 hover:-translate-y-0.5 active:translate-y-0"}`}
               >
-                Hint ({hintsAvailable} left)
+                <LightBulbIcon className="h-5 w-5 mr-2" />
+                <span>Use Hint ({hintsAvailable})</span>
+                {hintsAvailable > 0 && !selectedOption && (
+                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {hintsAvailable}
+                  </span>
+                )}
               </button>
+              
               <button
                 onClick={handleRestartQuiz}
-                className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                className="flex items-center justify-center py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0"
               >
-                Restart
+                <ArrowPathIcon className="h-5 w-5 mr-2" />
+                Restart Quiz
               </button>
             </div>
           </div>
@@ -305,35 +463,77 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             restartQuiz={handleRestartQuiz}
           />
         )}
+        
+        {/* Feedback message */}
         {feedback.message && !isQuizOver && (
           <div
-            className={`text-center my-3 p-2 rounded-md font-semibold ${
-              feedback.color === "text-red-600"
-                ? "bg-red-100 text-red-600"
-                : feedback.color === "text-emerald-600"
-                ? "bg-green-100 text-emerald-600"
-                : "bg-blue-100 text-blue-600"
-            }`}
+            className={`mt-6 p-4 rounded-xl font-medium flex items-center gap-3 animate-scale-in
+              ${
+                feedback.type === "error"
+                  ? "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/30"
+                  : feedback.type === "success"
+                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30"
+                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30"
+              }`}
           >
-            {feedback.message}
+            {feedback.type === "error" ? (
+              <div className="h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-800/30 flex items-center justify-center flex-shrink-0">
+                <XMarkIcon className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              </div>
+            ) : feedback.type === "success" ? (
+              <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-800/30 flex items-center justify-center flex-shrink-0">
+                <CheckIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center flex-shrink-0">
+                <InformationCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            )}
+            <span>{feedback.message}</span>
+          </div>
+        )}
+        
+        {/* Hint dialog */}
+        {showingHint && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full animate-scale-in shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">Hint</h3>
+                <button 
+                  onClick={() => setShowingHint(false)}
+                  className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/30">
+                <p>
+                  {/* This is where the hint from the useHint function would go */}
+                  One or more options have been disabled. Choose wisely from the remaining options!
+                </p>
+              </div>
+              <button
+                onClick={() => setShowingHint(false)}
+                className="w-full mt-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-semibold transition-all"
+              >
+                Got it
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 
-  // Initial user check
-  useEffect(() => {
-    if (!quizStarted) {
-      checkUserExists();
-    }
-  }, [quizStarted, checkUserExists]);
+  if (isLoading && !quizStarted && questions.length === 0 && !telegramUser?.id) {
+    return renderLoadingScreen();
+  }
 
   if (!quizStarted) {
     return renderStartScreen();
   }
 
-  if (!currentQuestion && !isQuizOver) {
+  if (isLoading || (!currentQuestion && !isQuizOver)) {
     return renderLoadingScreen();
   }
 
