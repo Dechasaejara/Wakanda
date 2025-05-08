@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link'; // Assuming Next.js Link
 import { CheckCircleIcon, ClockIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { Lesson } from '@/types';
 
 // Add LockClosedIcon to components/icons.tsx
 /*
@@ -17,15 +18,9 @@ export function LockClosedIcon(props: React.SVGProps<SVGSVGElement>) {
 
 
 interface LessonCardProps {
-    lesson: {
-        id: string;
-        title: string;
-        description: string;
-        completionTime: number; // Example
-        // Add other lesson properties
-    };
-    isCompleted: boolean;
-    isLocked: boolean;
+    lesson: Lesson;
+    isCompleted?: boolean;
+    isLocked?: boolean;
     order: number;
 }
 
