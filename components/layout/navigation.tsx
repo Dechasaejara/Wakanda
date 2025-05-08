@@ -253,30 +253,44 @@ const NavigationLayout: FC<NavigationLayoutProps> = ({ children }) => {
 
   return (
     <AppContext.Provider value={{ user, setUser, showError }}>
-      <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mx-auto overflow-hidden transition-colors duration-300"
-           style={{ maxWidth: 'var(--max-width-container)' }}>
-        {/* Main content area with responsive padding */}
-        <main className="flex-grow overflow-y-auto overscroll-none"
-              style={{
-                paddingTop: 'var(--space-page)',
-                paddingLeft: 'var(--space-page)',
-                paddingRight: 'var(--space-page)',
-                paddingBottom: 'calc(var(--nav-height) + var(--space-page))',
-              }}>
-          <div className="space-y-6 animate-fade-in">
+  <div
+        className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mx-auto overflow-hidden transition-colors duration-300"
+        style={{
+          maxWidth: "var(--max-width-container)",
+        }}
+      >
+        {/* Main content area */}
+        <main
+          className="flex-grow overflow-y-auto overscroll-none"
+          style={{
+            paddingTop: "var(--space-page)",
+            paddingLeft: "var(--space-page)",
+            paddingRight: "var(--space-page)",
+            paddingBottom: "calc(var(--nav-height) + var(--space-page))",
+          }}
+        >
+          <div
+            className="space-y-6 animate-fade-in bg-white/30 dark:bg-gray-800/30 backdrop-blur-md rounded-2xl shadow-lg p-1"
+            style={{
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+            }}
+          >
             {children}
           </div>
         </main>
 
         {/* Bottom navigation bar */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-10 transition-all duration-300"
-             style={{
-               maxWidth: 'var(--max-width-container)',
-               margin: '0 auto',
-               height: 'var(--nav-height)',
-               borderTopLeftRadius: 'var(--radius-card)',
-               borderTopRightRadius: 'var(--radius-card)',
-             }}>
+        <nav
+          className="fixed bottom-0 left-0 right-0 bg-white/30 dark:bg-gray-800/30 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-lg z-10 transition-all duration-300"
+          style={{
+            maxWidth: "var(--max-width-container)",
+            margin: "0 auto",
+            height: "var(--nav-height)",
+            borderTopLeftRadius: "var(--radius-card)",
+            borderTopRightRadius: "var(--radius-card)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+          }}
+        >
           <div className="flex justify-around items-center h-full">
             {tabs.map((tab) => {
               const isActive = isActiveTab(tab.path);
@@ -284,65 +298,24 @@ const NavigationLayout: FC<NavigationLayoutProps> = ({ children }) => {
                 <Link
                   key={tab.id}
                   href={tab.path}
-                  className={`relative flex flex-col items-center justify-center p-2 w-full h-full transition-all duration-300
-                              ${isActive 
-                                ? "text-[var(--color-primary)] dark:text-[var(--color-primary-light)]" 
-                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30"}`}
+                  className={`relative flex flex-col items-center justify-center p-2 w-full h-full transition-all duration-300 ${
+                    isActive
+                      ? "text-[var(--color-primary)] dark:text-[var(--color-primary-light)]"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-50/30 dark:hover:bg-gray-700/30"
+                  }`}
                   aria-label={tab.label}
                 >
-                  {/* Active tab background indicator */}
-                  {isActive && (
-                    <span className="absolute inset-0 bg-gray-100 dark:bg-gray-700/40 animate-fade-in -z-10" />
-                  )}
-                  
                   <tab.Icon
                     className={`w-6 h-6 mb-1 transition-transform duration-300 ${
                       isActive ? "animate-pulse-once scale-110" : "group-hover:scale-105"
                     }`}
                   />
-                  
-                  <span className="text-xs font-medium">
-                    {tab.label}
-                  </span>
-                  
-                  {/* Active tab indicator line */}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-[var(--color-primary)] dark:bg-[var(--color-primary-light)] rounded-full" />
-                  )}
+                  <span className="text-xs font-medium">{tab.label}</span>
                 </Link>
               );
             })}
           </div>
         </nav>
-
-        {/* Scroll to top button */}
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className={`fixed bottom-20 right-4 bg-white dark:bg-gray-800 p-3 rounded-full shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-light)] ${
-            showScrollButton ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-4'
-          }`}
-          aria-label="Scroll to top"
-        >
-          <ArrowUpIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-        </button>
-
-        {/* Error message toast */}
-        {error && (
-          <div className="fixed bottom-20 left-0 right-0 mx-auto max-w-xs px-4 animate-slide-up z-50">
-            <div className="bg-red-500 text-white p-3 rounded-lg shadow-lg flex items-center justify-between">
-              <span className="text-sm font-medium">{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-3 p-1 rounded-full hover:bg-white/20 transition-colors"
-                aria-label="Dismiss error"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </AppContext.Provider>
   );
