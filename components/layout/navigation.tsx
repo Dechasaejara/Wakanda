@@ -80,7 +80,7 @@ const NavigationLayout: FC<NavigationLayoutProps> = ({ children }) => {
       tg.BackButton.show();
       const handleBackButtonClick = () => router.back();
       tg.BackButton.onClick(handleBackButtonClick);
-      tg.isFullscreen= true;
+      // tg.isFullscreen= true;
 
       return () => {
         if (window.Telegram?.WebApp) {
