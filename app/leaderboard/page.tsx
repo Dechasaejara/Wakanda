@@ -6,6 +6,7 @@ import { LeaderboardRow } from "@/components/LeaderboardRow";
 import FilterTabs from "@/components/quiz/FilterTabs";
 import ModulesSkeleton from "@/components/skeletons/ModulesSkeleton";
 import { LeaderboardEntry } from "@/types";
+import { BASE_URL } from "@/utils/formatters";
 import { useState, useEffect } from "react";
 
 
@@ -26,7 +27,7 @@ export default function LeaderboardPage() {
       try {
         setIsLoading(true);
         // In real app, replace with actual API call
-        const response = await fetch(`/api/leaderboard?timeframe=${timeframe}`);
+        const response = await fetch(`${BASE_URL}/api/leaderboard?timeframe=${timeframe}`);
         
         if (!response.ok) {
           throw new Error("Failed to fetch leaderboard");

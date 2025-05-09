@@ -20,6 +20,7 @@ import {
   XMarkIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
+import { BASE_URL } from "@/utils/formatters";
 
 interface FilteredQuestions {
   subject?: string;
@@ -106,7 +107,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         completedAt: new Date().toISOString(),
       };
       console.log("Saving progress:", progressData);
-      const response = await fetch("/api/userProgress", {
+      const response = await fetch(`${BASE_URL}/api/userProgress`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
@@ -136,7 +137,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           firstName: telegramUser.first_name || "",
           lastName: telegramUser.last_name || "",
         };
-        const response = await fetch("/api/profiles", {
+        const response = await fetch(`${BASE_URL}/api/profiles`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profile),
@@ -161,7 +162,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      const response = await fetch("/api/users", {
+      const response = await fetch(`${BASE_URL}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userdata),
@@ -182,7 +183,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       return;
     }
     try {
-      const response = await fetch(`/api/user/${telegramUser.id}`);
+      const response = await fetch(`${BASE_URL}/api/user/${telegramUser.id}`);
       if (!response.ok) {
         await postUser();
       }

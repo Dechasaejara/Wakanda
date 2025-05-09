@@ -1,3 +1,4 @@
+import { BASE_URL } from "@/utils/formatters";
 import { Bot } from "grammy";
 
 export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
@@ -38,7 +39,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
 
   bot.command("questions", async (ctx) => {
     try {
-      const response = await fetch(`${process.env.BASE_URL}/api/questions`);
+      const response = await fetch(`${BASE_URL}/api/questions`);
       if (!response.ok) {
         throw new Error(`Failed to fetch questions: ${response.statusText}`);
       }
@@ -126,7 +127,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
       }
 
       // Send the questions to the API
-      const apiResponse = await fetch(`${process.env.BASE_URL}/api/questions`, {
+      const apiResponse = await fetch(`${BASE_URL}/api/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(questionsArray),
@@ -148,7 +149,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
 
   bot.callbackQuery("view_questions", async (ctx) => {
     try {
-      const response = await fetch(`${process.env.BASE_URL}/api/questions`);
+      const response = await fetch(`${BASE_URL}/api/questions`);
       if (!response.ok) {
         throw new Error(`Failed to fetch questions: ${response.statusText}`);
       }

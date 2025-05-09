@@ -8,6 +8,7 @@ import FilterTabs from "@/components/quiz/FilterTabs";
 import { Challenge } from "@/types";
 import { ChallengesSkeleton } from "@/components/Skeletons";
 import { ChallengeCard } from "@/components/ChallengeCard";
+import { BASE_URL } from "@/utils/formatters";
 
 export default function ChallengesPage() {
   const { showError } = useAppContext();
@@ -27,7 +28,7 @@ export default function ChallengesPage() {
       try {
         setIsLoading(true);
         // In real app, replace with actual API call
-        const response = await fetch(`/api/challenges?difficulty=${difficulty}`);
+        const response = await fetch(`${BASE_URL}/api/challenges?difficulty=${difficulty}`);
         
         if (!response.ok) {
           throw new Error("Failed to fetch challenges");

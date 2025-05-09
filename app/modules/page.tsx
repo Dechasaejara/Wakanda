@@ -6,6 +6,7 @@ import { useAppContext } from "@/components/layout/navigation";
 import { ModuleCard } from "@/components/ModuleCard";
 import { ModuleListSkeleton } from "@/components/Skeletons";
 import { Module } from "@/types";
+import { BASE_URL } from "@/utils/formatters";
 
 export default function ModulesPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function ModulesPage() {
     const fetchModules = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/modules`);
+        const response = await fetch(`${BASE_URL}/api/modules`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch modules");
