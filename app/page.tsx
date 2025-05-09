@@ -1,6 +1,7 @@
 import { db } from "@/backend/db/drizzle";
 import { Questions } from "@/backend/db/schema";
 import QuizFilter from "@/components/quiz/QuizFilter";
+import { BASE_URL } from "@/utils/formatters";
 
 export default async function Home() {
   const allQuestions = await db.select().from(Questions);

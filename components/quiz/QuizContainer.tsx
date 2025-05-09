@@ -19,6 +19,7 @@ import {
   ClockIcon,
   XMarkIcon,
   CheckIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { BASE_URL } from "@/utils/formatters";
 
@@ -43,6 +44,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showingHint, setShowingHint] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const { user } = useAppContext();
   const telegramUser = user?.initDataUnsafe?.user;
 
@@ -87,13 +89,24 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     return (timeLeft / timeLimit) * 100;
   }, [timeLeft, timeLimit]);
 
+  // Get API base URL safely
+  const getApiUrl = useCallback((endpoint: string) => {
+    // If BASE_URL is undefined or empty, fallback to relative path
+    const baseUrl = BASE_URL || "";
+    return `${baseUrl}/api/${endpoint}`
+      .replace(/\/+/g, "/")
+      .replace(/^\/api/, "/api");
+  }, []);
+
   // API call functions
   const postUserProgress = useCallback(async () => {
     if (!telegramUser?.id || !quizStarted) return;
+    setApiError(null);
 
     try {
+      const userId = telegramUser.id.toString();
       const progressData = {
-        userId: telegramUser.id.toString(),
+        userId,
         subject: quiz.subject === "All" ? undefined : quiz.subject,
         gradeLevel: quiz.gradeLevel === "All" ? undefined : quiz.gradeLevel,
         difficulty: quiz.difficulty === "All" ? undefined : quiz.difficulty,
@@ -106,17 +119,23 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         completed: resultsTitle === "Quiz Complete!",
         completedAt: new Date().toISOString(),
       };
-      console.log("Saving progress:", progressData);
-      const response = await fetch(`${BASE_URL}/api/userProgress`, {
+
+      const response = await fetch(getApiUrl("userProgress"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
       });
-      console.log({ response });
-      if (!response.ok)
-        console.error("Failed to post user progress:", await response.json());
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Unknown error" }));
+        console.error("Failed to post user progress:", errorData);
+        // Don't show UI error for progress failures to avoid disrupting experience
+      }
     } catch (error) {
       console.error("Error posting user progress:", error);
+      // Silently fail progress updates to not disrupt the quiz experience
     }
   }, [
     telegramUser,
@@ -126,73 +145,92 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     currentQuestionIndex,
     quizStarted,
     resultsTitle,
+    getApiUrl,
   ]);
 
   const postProfile = useCallback(
-    async (userId: number) => {
+    async (userId: string) => {
       if (!telegramUser) return;
+
       try {
         const profile: InProfile = {
-          userId: userId,
+          userId: parseInt(userId, 10),
           firstName: telegramUser.first_name || "",
           lastName: telegramUser.last_name || "",
         };
-        const response = await fetch(`${BASE_URL}/api/profiles`, {
+
+        const response = await fetch(getApiUrl("profiles"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profile),
         });
-        if (!response.ok)
-          console.error("Failed to post user profile:", await response.json());
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: "Unknown error" }));
+          console.error("Failed to post user profile:", errorData);
+        }
       } catch (error) {
         console.error("Error posting user profile:", error);
       }
     },
-    [telegramUser]
+    [telegramUser, getApiUrl]
   );
 
   const postUser = useCallback(async () => {
     if (!telegramUser?.id) return;
+
     try {
-      const userdata: InUser = {
-        code: telegramUser.id.toString(),
+      const userId = telegramUser.id.toString();
+      const userData: InUser = {
+        code: userId,
         username: telegramUser.username || "Guest",
         userImage: telegramUser.photo_url || "",
         role: "user",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      const response = await fetch(`${BASE_URL}/api/users`, {
+
+      const response = await fetch(getApiUrl("users"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userdata),
+        body: JSON.stringify(userData),
       });
+
       if (!response.ok) {
-        console.error("Failed to post user:", await response.json());
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Unknown error" }));
+        console.error("Failed to post user:", errorData);
       } else {
-        await postProfile(telegramUser.id);
+        await postProfile(userId);
       }
     } catch (error) {
       console.error("Error posting user:", error);
     }
-  }, [telegramUser, postProfile]);
+  }, [telegramUser, postProfile, getApiUrl]);
 
   const checkUserExists = useCallback(async () => {
     if (!telegramUser?.id) {
       setIsLoading(false);
       return;
     }
+
+    const userId = telegramUser.id.toString();
+
     try {
-      const response = await fetch(`${BASE_URL}/api/user/${telegramUser.id}`);
+      const response = await fetch(getApiUrl(`user/${userId}`));
       if (!response.ok) {
         await postUser();
       }
     } catch (error) {
       console.error("Error checking user:", error);
+      // Continue even if user check fails
     } finally {
       if (questions.length > 0) setIsLoading(false);
     }
-  }, [telegramUser, postUser, questions.length]);
+  }, [telegramUser, postUser, questions.length, getApiUrl]);
 
   const handleStartQuiz = useCallback(() => {
     if (questions.length === 0) {
@@ -200,27 +238,35 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       setIsLoading(false);
       return;
     }
+
+    setApiError(null);
     setIsLoading(true);
     setFilteredQuestions(questions);
     startQuiz();
     setQuizStarted(true);
+
+    // Use a shorter timeout to improve perceived performance
     setTimeout(() => setIsLoading(false), 300);
   }, [questions, startQuiz]);
 
   const handleRestartQuiz = useCallback(() => {
     if (isQuizOver) postUserProgress();
 
+    setApiError(null);
     setIsLoading(true);
     setQuizStarted(false);
+
     setTimeout(() => {
       setIsLoading(false);
     }, 300);
   }, [isQuizOver, postUserProgress]);
 
   const handleHintClick = useCallback(() => {
+    if (hintsAvailable <= 0 || selectedOption) return;
+
     setShowingHint(true);
     useHint();
-  }, [useHint]);
+  }, [useHint, hintsAvailable, selectedOption]);
 
   useEffect(() => {
     if (!quizStarted) {
@@ -288,6 +334,10 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           opacity: 1;
         }
       }
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
       .animate-pulse-ring:before {
         content: '';
         position: absolute;
@@ -304,6 +354,9 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       .animate-scale-in {
         animation: scale-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
       }
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
       
       /* Timer animation */
       @keyframes timer-warn {
@@ -315,24 +368,27 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       }
     `;
     document.head.appendChild(style);
+
     return () => {
-      document.head.removeChild(style);
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
     };
   }, []);
 
   const renderStartScreen = () => (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-1">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-6">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-8 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
         <div className="relative inline-block mx-auto">
           <div className="absolute inset-0 bg-teal-400 rounded-full blur-xl opacity-25 animate-pulse"></div>
           <PlayCircleIcon className="h-24 w-24 text-teal-500 dark:text-teal-400 relative animate-pulse-ring" />
         </div>
 
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white font-heading">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-heading">
           Ready to Challenge Yourself?
         </h2>
 
-        <p className="text-slate-600 dark:text-slate-300 text-lg max-w-md mx-auto">
+        <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-md mx-auto">
           You have {questions.length} question
           {questions.length === 1 ? "" : "s"} waiting. Let's see how well you
           do!
@@ -341,7 +397,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         <button
           onClick={handleStartQuiz}
           disabled={questions.length === 0 || isLoading}
-          className={`w-full py-4 px-6 rounded-xl text-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] ${
+          className={`w-full py-3 sm:py-4 px-6 rounded-xl text-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] ${
             questions.length === 0 || isLoading
               ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
               : "bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 text-white shadow-lg shadow-teal-500/20 dark:shadow-teal-600/20"
@@ -366,13 +422,20 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             filters.
           </p>
         )}
+
+        {apiError && (
+          <div className="mt-4 p-3 text-sm bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-lg flex items-start gap-2">
+            <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <p>{apiError}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 
   const renderLoadingScreen = () => (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-1">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-700 animate-pulse">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-6">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-8 text-center border border-slate-100 dark:border-slate-700 animate-pulse">
         <div className="relative mx-auto w-20 h-20 mb-6">
           <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-700"></div>
           <div className="absolute inset-0 rounded-full border-4 border-teal-500 dark:border-teal-400 border-l-transparent animate-spin"></div>
@@ -389,9 +452,9 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   );
 
   const renderQuizContent = () => (
-    <div className="py-4 px-1 animate-slide-in-bottom">
-      <div className="w-full max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 border border-slate-100 dark:border-slate-700">
-        <div className="space-y-6">
+    <div className="py-4 px-4 sm:px-6 animate-slide-in-bottom">
+      <div className="w-full max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-4 sm:p-6 border border-slate-100 dark:border-slate-700">
+        <div className="space-y-4 sm:space-y-6">
           <Header
             score={score}
             lives={lives}
@@ -447,8 +510,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         </div>
 
         {!isQuizOver && currentQuestion ? (
-          <div className="space-y-6 mt-8">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white text-center font-heading leading-relaxed">
+          <div className="space-y-6 mt-6 sm:mt-8">
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white text-center font-heading leading-relaxed">
               {currentQuestion.question}
             </h2>
 
@@ -465,11 +528,11 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               disabledOptions={disabledOptions}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-8">
               <button
                 onClick={handleHintClick}
                 disabled={hintsAvailable <= 0 || !!selectedOption}
-                className={`relative flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all
+                className={`relative flex items-center justify-center py-2.5 sm:py-3 px-4 rounded-xl text-sm font-semibold transition-all
                   ${
                     hintsAvailable <= 0 || !!selectedOption
                       ? "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
@@ -477,7 +540,9 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
                   }`}
               >
                 <LightBulbIcon className="h-5 w-5 mr-2" />
-                <span>Use Hint ({hintsAvailable})</span>
+                <span>
+                  Use Hint {hintsAvailable > 0 && `(${hintsAvailable})`}
+                </span>
                 {hintsAvailable > 0 && !selectedOption && (
                   <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {hintsAvailable}
@@ -487,7 +552,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
               <button
                 onClick={handleRestartQuiz}
-                className="flex items-center justify-center py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0"
+                className="flex items-center justify-center py-2.5 sm:py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0"
               >
                 <ArrowPathIcon className="h-5 w-5 mr-2" />
                 Restart Quiz
@@ -537,7 +602,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         {/* Hint dialog */}
         {showingHint && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full animate-scale-in shadow-2xl">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 max-w-md w-full animate-scale-in shadow-2xl">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">
                   Hint
@@ -551,6 +616,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               </div>
               <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/30">
                 <p>
+                  {/* Show actual hint message if available, otherwise use generic text */}
+                  {/* This will depend on what useHint actually returns from your hook */}
                   One or more options have been disabled. Choose wisely from the
                   remaining options!
                 </p>
