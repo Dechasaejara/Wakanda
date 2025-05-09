@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useCallback, useState, lazy, Suspense } from "react";
+import React, { useEffect, useMemo, useCallback, useState } from "react";
 import Header from "./Header";
 import ProgressBar from "./ProgressBar";
 import Options from "./Options";
@@ -11,14 +11,14 @@ import { Question, InUser, InProfile } from "@/backend/db/schema";
 import { useAppContext } from "@/components/layout/navigation";
 
 // Icon imports
-import { 
-  PlayCircleIcon, 
-  LightBulbIcon, 
-  ArrowPathIcon, 
+import {
+  PlayCircleIcon,
+  LightBulbIcon,
+  ArrowPathIcon,
   InformationCircleIcon,
   ClockIcon,
   XMarkIcon,
-  CheckIcon
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
 interface FilteredQuestions {
@@ -92,7 +92,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
     try {
       const progressData = {
-        userId: telegramUser.id,
+        userId: telegramUser.id.toString(),
         subject: quiz.subject === "All" ? undefined : quiz.subject,
         gradeLevel: quiz.gradeLevel === "All" ? undefined : quiz.gradeLevel,
         difficulty: quiz.difficulty === "All" ? undefined : quiz.difficulty,
@@ -101,39 +101,54 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         totalQuestions: quiz.totalQuestions,
         correctAnswers: score / 10,
         score,
-        timeSpent: timeLimit * (currentQuestionIndex +1),
-        completed: true,
+        timeSpent: timeLimit * (currentQuestionIndex + 1),
+        completed: resultsTitle === "Quiz Complete!",
         completedAt: new Date().toISOString(),
       };
+      console.log("Saving progress:", progressData);
       const response = await fetch("/api/userProgress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
       });
-      if (!response.ok) console.error("Failed to post user progress:", await response.json());
+      console.log({ response });
+      if (!response.ok)
+        console.error("Failed to post user progress:", await response.json());
     } catch (error) {
       console.error("Error posting user progress:", error);
     }
-  }, [telegramUser, quiz, score, timeLimit, currentQuestionIndex, quizStarted]);
+  }, [
+    telegramUser,
+    quiz,
+    score,
+    timeLimit,
+    currentQuestionIndex,
+    quizStarted,
+    resultsTitle,
+  ]);
 
-  const postProfile = useCallback(async (userId: number) => {
-    if (!telegramUser) return;
-    try {
-      const profile: InProfile = {
-        userId,
-        firstName: telegramUser.first_name || "",
-        lastName: telegramUser.last_name || "",
-      };
-      const response = await fetch("/api/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-      if (!response.ok) console.error("Failed to post user profile:", await response.json());
-    } catch (error) {
-      console.error("Error posting user profile:", error);
-    }
-  }, [telegramUser]);
+  const postProfile = useCallback(
+    async (userId: number) => {
+      if (!telegramUser) return;
+      try {
+        const profile: InProfile = {
+          userId: userId,
+          firstName: telegramUser.first_name || "",
+          lastName: telegramUser.last_name || "",
+        };
+        const response = await fetch("/api/profiles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profile),
+        });
+        if (!response.ok)
+          console.error("Failed to post user profile:", await response.json());
+      } catch (error) {
+        console.error("Error posting user profile:", error);
+      }
+    },
+    [telegramUser]
+  );
 
   const postUser = useCallback(async () => {
     if (!telegramUser?.id) return;
@@ -192,7 +207,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   }, [questions, startQuiz]);
 
   const handleRestartQuiz = useCallback(() => {
-    if(isQuizOver) postUserProgress();
+    if (isQuizOver) postUserProgress();
 
     setIsLoading(true);
     setQuizStarted(false);
@@ -200,7 +215,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       setIsLoading(false);
     }, 300);
   }, [isQuizOver, postUserProgress]);
-  
+
   const handleHintClick = useCallback(() => {
     setShowingHint(true);
     useHint();
@@ -224,11 +239,20 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     } else {
       stopTimer();
     }
-  }, [isQuizOver, quizStarted, isLoading, currentQuestion, answerStatus, startTimer, stopTimer, postUserProgress]);
+  }, [
+    isQuizOver,
+    quizStarted,
+    isLoading,
+    currentQuestion,
+    answerStatus,
+    startTimer,
+    stopTimer,
+    postUserProgress,
+  ]);
 
   // Add font styles
   useEffect(() => {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes pulse-ring {
         0% {
@@ -302,16 +326,17 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           <div className="absolute inset-0 bg-teal-400 rounded-full blur-xl opacity-25 animate-pulse"></div>
           <PlayCircleIcon className="h-24 w-24 text-teal-500 dark:text-teal-400 relative animate-pulse-ring" />
         </div>
-        
+
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white font-heading">
           Ready to Challenge Yourself?
         </h2>
-        
+
         <p className="text-slate-600 dark:text-slate-300 text-lg max-w-md mx-auto">
-          You have {questions.length} question{questions.length === 1 ? "" : "s"} waiting. 
-          Let's see how well you do!
+          You have {questions.length} question
+          {questions.length === 1 ? "" : "s"} waiting. Let's see how well you
+          do!
         </p>
-        
+
         <button
           onClick={handleStartQuiz}
           disabled={questions.length === 0 || isLoading}
@@ -333,10 +358,11 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             </span>
           )}
         </button>
-        
+
         {questions.length === 0 && !isLoading && (
           <p className="text-sm text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg">
-            No questions available for this selection. Please try different filters.
+            No questions available for this selection. Please try different
+            filters.
           </p>
         )}
       </div>
@@ -351,9 +377,11 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           <div className="absolute inset-0 rounded-full border-4 border-teal-500 dark:border-teal-400 border-l-transparent animate-spin"></div>
         </div>
         <p className="text-xl text-slate-600 dark:text-slate-300 font-medium">
-          {isLoading && !quizStarted && questions.length > 0 ? "Preparing your quiz..." :
-           isLoading ? "Loading..." :
-           "No questions available."}
+          {isLoading && !quizStarted && questions.length > 0
+            ? "Preparing your quiz..."
+            : isLoading
+            ? "Loading..."
+            : "No questions available."}
         </p>
       </div>
     </div>
@@ -370,49 +398,59 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             currentQuestionIndex={currentQuestionIndex}
             totalQuestions={filteredQuestions.length}
           />
-          
+
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-              <span>Question {currentQuestionIndex + 1} of {filteredQuestions.length}</span>
+              <span>
+                Question {currentQuestionIndex + 1} of{" "}
+                {filteredQuestions.length}
+              </span>
               <div className="flex items-center">
                 <ClockIcon className="h-4 w-4 mr-1" />
-                <span className={`font-medium ${timeLeft < 5 ? 'text-amber-500 dark:text-amber-400' : ''}`}>
+                <span
+                  className={`font-medium ${
+                    timeLeft < 5 ? "text-amber-500 dark:text-amber-400" : ""
+                  }`}
+                >
                   {timeLeft}s left
                 </span>
               </div>
             </div>
-            
+
             <ProgressBar
               progress={
-                (isQuizOver && resultsTitle === "Quiz Complete!") || (currentQuestionIndex +1 >= filteredQuestions.length && feedback.message)
+                (isQuizOver && resultsTitle === "Quiz Complete!") ||
+                (currentQuestionIndex + 1 >= filteredQuestions.length &&
+                  feedback.message)
                   ? 100
-                  : ((currentQuestionIndex +1) / filteredQuestions.length) * 100
+                  : ((currentQuestionIndex + 1) / filteredQuestions.length) *
+                    100
               }
               isFailed={isQuizOver && lives <= 0}
             />
-            
+
             {/* Time bar below progress bar */}
             <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full transition-all duration-1000 ease-linear rounded-full ${
-                  timeProgress > 50 
-                    ? 'bg-teal-500 dark:bg-teal-400' 
-                    : timeProgress > 25 
-                      ? 'bg-amber-500 dark:bg-amber-400' 
-                      : 'bg-rose-500 dark:bg-rose-400 animate-timer-warn'
+                  timeProgress > 50
+                    ? "bg-teal-500 dark:bg-teal-400"
+                    : timeProgress > 25
+                    ? "bg-amber-500 dark:bg-amber-400"
+                    : "bg-rose-500 dark:bg-rose-400 animate-timer-warn"
                 }`}
                 style={{ width: `${timeProgress}%` }}
               ></div>
             </div>
           </div>
         </div>
-        
+
         {!isQuizOver && currentQuestion ? (
           <div className="space-y-6 mt-8">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white text-center font-heading leading-relaxed">
               {currentQuestion.question}
             </h2>
-            
+
             <Options
               options={
                 Array.isArray(currentQuestion.options)
@@ -425,15 +463,17 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               correctAnswer={currentQuestion.correctAnswer}
               disabledOptions={disabledOptions}
             />
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
               <button
                 onClick={handleHintClick}
                 disabled={hintsAvailable <= 0 || !!selectedOption}
                 className={`relative flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all
-                  ${hintsAvailable <= 0 || !!selectedOption 
-                    ? "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed" 
-                    : "bg-amber-400 hover:bg-amber-500 text-amber-900 shadow hover:shadow-amber-200/50 hover:-translate-y-0.5 active:translate-y-0"}`}
+                  ${
+                    hintsAvailable <= 0 || !!selectedOption
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                      : "bg-amber-400 hover:bg-amber-500 text-amber-900 shadow hover:shadow-amber-200/50 hover:-translate-y-0.5 active:translate-y-0"
+                  }`}
               >
                 <LightBulbIcon className="h-5 w-5 mr-2" />
                 <span>Use Hint ({hintsAvailable})</span>
@@ -443,7 +483,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
                   </span>
                 )}
               </button>
-              
+
               <button
                 onClick={handleRestartQuiz}
                 className="flex items-center justify-center py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0"
@@ -463,7 +503,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             restartQuiz={handleRestartQuiz}
           />
         )}
-        
+
         {/* Feedback message */}
         {feedback.message && !isQuizOver && (
           <div
@@ -492,14 +532,16 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             <span>{feedback.message}</span>
           </div>
         )}
-        
+
         {/* Hint dialog */}
         {showingHint && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full animate-scale-in shadow-2xl">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">Hint</h3>
-                <button 
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">
+                  Hint
+                </h3>
+                <button
                   onClick={() => setShowingHint(false)}
                   className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
                 >
@@ -508,8 +550,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               </div>
               <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/30">
                 <p>
-                  {/* This is where the hint from the useHint function would go */}
-                  One or more options have been disabled. Choose wisely from the remaining options!
+                  One or more options have been disabled. Choose wisely from the
+                  remaining options!
                 </p>
               </div>
               <button
@@ -525,7 +567,12 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     </div>
   );
 
-  if (isLoading && !quizStarted && questions.length === 0 && !telegramUser?.id) {
+  if (
+    isLoading &&
+    !quizStarted &&
+    questions.length === 0 &&
+    !telegramUser?.id
+  ) {
     return renderLoadingScreen();
   }
 
