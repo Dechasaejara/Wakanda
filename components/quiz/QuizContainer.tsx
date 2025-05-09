@@ -113,7 +113,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         topic: quiz.topic === "All" ? undefined : quiz.topic,
         unit: quiz.unit === "All" ? undefined : quiz.unit,
         totalQuestions: quiz.totalQuestions,
-        correctAnswers: score / 10,
+        correctAnswers: score,
         score,
         timeSpent: timeLimit * (currentQuestionIndex + 1),
         completed: resultsTitle === "Quiz Complete!",
