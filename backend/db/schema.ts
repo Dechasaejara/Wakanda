@@ -176,9 +176,9 @@ export const Leaderboard = pgTable("leaderboard", {
 // User Progress Table
 export const UserProgress = pgTable("user_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id")
+  userCode: text("user_code")
     .notNull()
-    .references(() => Users.id, { onDelete: "cascade" }),
+    .references(() => Users.code, { onDelete: "cascade" }),
   moduleId: integer("module_id")
     // .notNull()
     .references(() => Modules.id, { onDelete: "cascade" }),
@@ -261,20 +261,20 @@ export const LeaderboardRelations = relations(Leaderboard, ({ one }) => ({
   }),
 }));
 
-export const UserProgressRelations = relations(
-  UserProgress,
-  ({ one, many }) => ({
-    user: many(Users),
-    module: one(Modules, {
-      fields: [UserProgress.moduleId],
-      references: [Modules.id],
-    }),
-    lesson: one(Lessons, {
-      fields: [UserProgress.lessonId],
-      references: [Lessons.id],
-    }),
-  })
-);
+export const UserProgressRelations = relations(UserProgress, ({ one }) => ({
+  user: one(Users, {
+    fields: [UserProgress.userCode],
+    references: [Users.code],
+  }),
+  module: one(Modules, {
+    fields: [UserProgress.moduleId],
+    references: [Modules.id],
+  }),
+  lesson: one(Lessons, {
+    fields: [UserProgress.lessonId],
+    references: [Lessons.id],
+  }),
+}));
 
 export const ChallengeRelations = relations(Challenges, ({ many }) => ({
   challengeQuestions: many(ChallengeQuestions),

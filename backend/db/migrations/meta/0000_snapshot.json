@@ -1,5 +1,5 @@
 {
-  "id": "1ec53afc-8b6d-49b1-8342-fcf465e22c39",
+  "id": "3274e303-2b4c-4df3-b184-8a510f9aac29",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -516,6 +516,18 @@
           "notNull": false,
           "default": 5
         },
+        "latitude": {
+          "name": "latitude",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "show_on_leaderboard": {
           "name": "show_on_leaderboard",
           "type": "boolean",
@@ -556,6 +568,13 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+        "profiles_user_id_unique": {
+          "name": "profiles_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        },
         "profiles_email_unique": {
           "name": "profiles_email_unique",
           "nullsNotDistinct": false,
@@ -585,9 +604,45 @@
           "primaryKey": true,
           "notNull": true
         },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "lesson_id": {
           "name": "lesson_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "topic": {
+          "name": "topic",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subtopic": {
+          "name": "subtopic",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grade_level": {
+          "name": "grade_level",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false
         },
@@ -596,7 +651,8 @@
           "type": "quiz_type",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'assessment'"
         },
         "question": {
           "name": "question",
@@ -608,7 +664,7 @@
           "name": "options",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "correct_answer": {
           "name": "correct_answer",
@@ -622,17 +678,20 @@
           "primaryKey": false,
           "notNull": false
         },
-        "code_snippet": {
-          "name": "code_snippet",
-          "type": "text",
+        "difficulty": {
+          "name": "difficulty",
+          "type": "difficulty",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'beginner'"
         },
         "language": {
           "name": "language",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'en'"
         },
         "reference": {
           "name": "reference",
@@ -640,17 +699,25 @@
           "primaryKey": false,
           "notNull": false
         },
+        "tags": {
+          "name": "tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "points": {
           "name": "points",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": 2
         },
         "time_limit": {
           "name": "time_limit",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": 30
         },
         "created_at": {
           "name": "created_at",
@@ -684,7 +751,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "questions_order_unique": {
+          "name": "questions_order_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "order"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -699,9 +774,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
+        "user_code": {
+          "name": "user_code",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -709,13 +784,13 @@
           "name": "module_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "lesson_id": {
           "name": "lesson_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "completed": {
           "name": "completed",
@@ -729,6 +804,36 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grade_Level": {
+          "name": "grade_Level",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "topic": {
+          "name": "topic",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
         },
         "correct_answers": {
           "name": "correct_answers",
@@ -757,15 +862,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "user_progress_user_id_users_id_fk": {
-          "name": "user_progress_user_id_users_id_fk",
+        "user_progress_user_code_users_code_fk": {
+          "name": "user_progress_user_code_users_code_fk",
           "tableFrom": "user_progress",
           "tableTo": "users",
           "columnsFrom": [
-            "user_id"
+            "user_code"
           ],
           "columnsTo": [
-            "id"
+            "code"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -907,13 +1012,12 @@
       "name": "quiz_type",
       "schema": "public",
       "values": [
-        "multiple-choice",
-        "fill-in-the-blank",
-        "code-completion",
-        "bug-fixing",
-        "true-false",
-        "match-pairs",
-        "drag-drop"
+        "lesson",
+        "final",
+        "practice",
+        "challenge",
+        "exam",
+        "assessment"
       ]
     },
     "public.role": {

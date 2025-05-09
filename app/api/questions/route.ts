@@ -20,6 +20,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log({body})
     const newQuestion = await db.insert(Questions).values(body).returning();
     return NextResponse.json(newQuestion, { status: 201 });
   } catch (error) {

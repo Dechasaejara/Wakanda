@@ -132,6 +132,7 @@ export function registerCommandHandlers(bot: Bot, ADMIN_ID: number) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(questionsArray),
       });
+      console.log({questionsArray})
       console.log({ apiResponse });
       if (!apiResponse.ok) {
         throw new Error(`Failed to add questions: ${apiResponse.statusText}`);

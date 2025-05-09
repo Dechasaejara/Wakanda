@@ -22,6 +22,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { BASE_URL } from "@/utils/formatters";
+import { getUserByCode } from "@/backend/action/users";
 
 interface FilteredQuestions {
   subject?: string;
@@ -106,7 +107,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     try {
       const userId = telegramUser.id;
       const progressData = {
-        userId,
+        userCode: userId.toString(),
         subject: quiz.subject === "All" ? undefined : quiz.subject,
         gradeLevel: quiz.gradeLevel === "All" ? undefined : quiz.gradeLevel,
         difficulty: quiz.difficulty === "All" ? undefined : quiz.difficulty,
@@ -120,7 +121,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         completedAt: new Date().toISOString(),
       };
 
-      const response = await fetch(getApiUrl("userProgress"), {
+      const response = await fetch(getApiUrl("user-progress"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(progressData),
@@ -218,10 +219,9 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     }
 
     const userId = telegramUser.id.toString();
-
     try {
-      const response = await fetch(getApiUrl(`user/${userId}`));
-      if (!response.ok) {
+      const response = await getUserByCode(userId);
+      if (!response) {
         await postUser();
       }
     } catch (error) {

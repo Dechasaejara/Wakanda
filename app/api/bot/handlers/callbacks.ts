@@ -90,7 +90,7 @@ export function registerCallbackHandlers(bot: Bot) {
           const progress = await db
             .select()
             .from(UserProgress)
-            .where(eq(UserProgress.userId, userId))
+            .where(eq(UserProgress.userCode, userId.toString()))
             .limit(10)
             .execute();
 
