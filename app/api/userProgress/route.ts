@@ -19,6 +19,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log({body})
     const newUserProgress = await db.insert(UserProgress).values(body).returning();
     return NextResponse.json(newUserProgress, { status: 201 });
   } catch (error) {
