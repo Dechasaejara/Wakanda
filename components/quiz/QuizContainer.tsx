@@ -104,7 +104,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     setApiError(null);
 
     try {
-      const userId = telegramUser.id.toString();
+      const userId = telegramUser.id;
       const progressData = {
         userId,
         subject: quiz.subject === "All" ? undefined : quiz.subject,
