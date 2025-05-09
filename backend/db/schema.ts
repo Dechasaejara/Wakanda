@@ -261,20 +261,20 @@ export const LeaderboardRelations = relations(Leaderboard, ({ one }) => ({
   }),
 }));
 
-export const UserProgressRelations = relations(UserProgress, ({ one }) => ({
-  user: one(Users, {
-    fields: [UserProgress.userId],
-    references: [Users.id],
-  }),
-  module: one(Modules, {
-    fields: [UserProgress.moduleId],
-    references: [Modules.id],
-  }),
-  lesson: one(Lessons, {
-    fields: [UserProgress.lessonId],
-    references: [Lessons.id],
-  }),
-}));
+export const UserProgressRelations = relations(
+  UserProgress,
+  ({ one, many }) => ({
+    user: many(Users),
+    module: one(Modules, {
+      fields: [UserProgress.moduleId],
+      references: [Modules.id],
+    }),
+    lesson: one(Lessons, {
+      fields: [UserProgress.lessonId],
+      references: [Lessons.id],
+    }),
+  })
+);
 
 export const ChallengeRelations = relations(Challenges, ({ many }) => ({
   challengeQuestions: many(ChallengeQuestions),
