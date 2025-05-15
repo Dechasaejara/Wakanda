@@ -22,7 +22,6 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { BASE_URL } from "@/utils/formatters";
-// import { getUserByCode } from "@/backend/action/users";
 
 interface FilteredQuestions {
   subject?: string;
@@ -92,11 +91,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
   // Get API base URL safely
   const getApiUrl = useCallback((endpoint: string) => {
-    // If BASE_URL is undefined or empty, fallback to relative path
     const baseUrl = BASE_URL || "";
-    return `${baseUrl}/api/${endpoint}`
-      .replace(/\/+/g, "/")
-      .replace(/^\/api/, "/api");
+    return `${baseUrl}/api/${endpoint}`.replace(/\/+/g, "/").replace(/^\/api/, "/api");
   }, []);
 
   // API call functions
@@ -128,15 +124,13 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Unknown error" }));
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
         console.error("Failed to post user progress:", errorData);
-        // Don't show UI error for progress failures to avoid disrupting experience
+        setApiError("Failed to save progress. Please try again.");
       }
     } catch (error) {
       console.error("Error posting user progress:", error);
-      // Silently fail progress updates to not disrupt the quiz experience
+      setApiError("An error occurred while saving progress.");
     }
   }, [
     telegramUser,
@@ -167,13 +161,13 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
         });
 
         if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ message: "Unknown error" }));
+          const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
           console.error("Failed to post user profile:", errorData);
+          setApiError("Failed to create user profile.");
         }
       } catch (error) {
         console.error("Error posting user profile:", error);
+        setApiError("An error occurred while creating user profile.");
       }
     },
     [telegramUser, getApiUrl]
@@ -200,15 +194,15 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Unknown error" }));
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
         console.error("Failed to post user:", errorData);
+        setApiError("Failed to create user.");
       } else {
         await postProfile(userId);
       }
     } catch (error) {
       console.error("Error posting user:", error);
+      setApiError("An error occurred while creating user.");
     }
   }, [telegramUser, postProfile, getApiUrl]);
 
@@ -220,13 +214,13 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
     const userId = telegramUser.id.toString();
     try {
-      const response = 4232423423; // await getUserByCode(userId);
-      if (!response) {
+      const response = await fetch(getApiUrl(`users/${userId}`));
+      if (!response.ok) {
         await postUser();
       }
     } catch (error) {
       console.error("Error checking user:", error);
-      // Continue even if user check fails
+      setApiError("An error occurred while checking user.");
     } finally {
       if (questions.length > 0) setIsLoading(false);
     }
@@ -241,13 +235,23 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
     setApiError(null);
     setIsLoading(true);
-    setFilteredQuestions(questions);
+
+    // Filter questions based on quiz criteria
+    const filtered = questions.filter((q) => {
+      return (
+        (!quiz.subject || q.subject === quiz.subject) &&
+        (!quiz.gradeLevel || q.gradeLevel === quiz.gradeLevel) &&
+        (!quiz.difficulty || q.difficulty === quiz.difficulty) &&
+        (!quiz.unit || q.unit === quiz.unit) &&
+        (!quiz.topic || q.topic === quiz.topic)
+      );
+    });
+
+    setFilteredQuestions(filtered);
     startQuiz();
     setQuizStarted(true);
-
-    // Use a shorter timeout to improve perceived performance
-    setTimeout(() => setIsLoading(false), 300);
-  }, [questions, startQuiz]);
+    setIsLoading(false);
+  }, [questions, quiz, startQuiz]);
 
   const handleRestartQuiz = useCallback(() => {
     if (isQuizOver) postUserProgress();
@@ -297,42 +301,22 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     postUserProgress,
   ]);
 
-  // Add font styles
+  // Add font styles (unchanged from original)
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
       @keyframes pulse-ring {
-        0% {
-          transform: scale(0.8);
-          opacity: 0.8;
-        }
-        50% {
-          opacity: 0.4;
-        }
-        100% {
-          transform: scale(1.2);
-          opacity: 0;
-        }
+        0% { transform: scale(0.8); opacity: 0.8; }
+        50% { opacity: 0.4; }
+        100% { transform: scale(1.2); opacity: 0; }
       }
       @keyframes slide-in-bottom {
-        from { 
-          transform: translateY(20px);
-          opacity: 0;
-        }
-        to { 
-          transform: translateY(0);
-          opacity: 1;
-        }
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
       }
       @keyframes scale-in {
-        from { 
-          transform: scale(0.95);
-          opacity: 0;
-        }
-        to { 
-          transform: scale(1);
-          opacity: 1;
-        }
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
       }
       @keyframes fade-in {
         from { opacity: 0; }
@@ -357,8 +341,6 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
       .animate-fade-in {
         animation: fade-in 0.3s ease-out forwards;
       }
-      
-      /* Timer animation */
       @keyframes timer-warn {
         0%, 100% { background-color: rgb(245, 158, 11); }
         50% { background-color: rgb(252, 211, 77); }
@@ -390,8 +372,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
         <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-md mx-auto">
           You have {questions.length} question
-          {questions.length === 1 ? "" : "s"} waiting. Let's see how well you
-          do!
+          {questions.length === 1 ? "" : "s"} waiting. Let's see how well you do!
         </p>
 
         <button
@@ -418,8 +399,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
         {questions.length === 0 && !isLoading && (
           <p className="text-sm text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg">
-            No questions available for this selection. Please try different
-            filters.
+            No questions available for this selection. Please try different filters.
           </p>
         )}
 
@@ -466,8 +446,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
               <span>
-                Question {currentQuestionIndex + 1} of{" "}
-                {filteredQuestions.length}
+                Question {currentQuestionIndex + 1} of {filteredQuestions.length}
               </span>
               <div className="flex items-center">
                 <ClockIcon className="h-4 w-4 mr-1" />
@@ -484,16 +463,13 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
             <ProgressBar
               progress={
                 (isQuizOver && resultsTitle === "Quiz Complete!") ||
-                (currentQuestionIndex + 1 >= filteredQuestions.length &&
-                  feedback.message)
+                (currentQuestionIndex + 1 >= filteredQuestions.length && feedback.message)
                   ? 100
-                  : ((currentQuestionIndex + 1) / filteredQuestions.length) *
-                    100
+                  : ((currentQuestionIndex + 1) / filteredQuestions.length) * 100
               }
               isFailed={isQuizOver && lives <= 0}
             />
 
-            {/* Time bar below progress bar */}
             <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ease-linear rounded-full ${
@@ -540,9 +516,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
                   }`}
               >
                 <LightBulbIcon className="h-5 w-5 mr-2" />
-                <span>
-                  Use Hint {hintsAvailable > 0 && `(${hintsAvailable})`}
-                </span>
+                <span>Use Hint {hintsAvailable > 0 && `(${hintsAvailable})`}</span>
                 {hintsAvailable > 0 && !selectedOption && (
                   <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {hintsAvailable}
@@ -570,7 +544,6 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           />
         )}
 
-        {/* Feedback message */}
         {feedback.message && !isQuizOver && (
           <div
             className={`mt-6 p-4 rounded-xl font-medium flex items-center gap-3 animate-scale-in
@@ -599,7 +572,6 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
           </div>
         )}
 
-        {/* Hint dialog */}
         {showingHint && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 max-w-md w-full animate-scale-in shadow-2xl">
@@ -616,10 +588,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
               </div>
               <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/30">
                 <p>
-                  {/* Show actual hint message if available, otherwise use generic text */}
-                  {/* This will depend on what useHint actually returns from your hook */}
-                  One or more options have been disabled. Choose wisely from the
-                  remaining options!
+                  One or more options have been disabled. Choose wisely from the remaining options!
                 </p>
               </div>
               <button
@@ -635,12 +604,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
     </div>
   );
 
-  if (
-    isLoading &&
-    !quizStarted &&
-    questions.length === 0 &&
-    !telegramUser?.id
-  ) {
+  if (isLoading && !quizStarted && questions.length === 0 && !telegramUser?.id) {
     return renderLoadingScreen();
   }
 
