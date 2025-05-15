@@ -22,7 +22,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { BASE_URL } from "@/utils/formatters";
-import { getUserByCode } from "@/backend/action/users";
+// import { getUserByCode } from "@/backend/action/users";
 
 interface FilteredQuestions {
   subject?: string;
@@ -220,7 +220,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
 
     const userId = telegramUser.id.toString();
     try {
-      const response = await getUserByCode(userId);
+      const response = 4232423423; // await getUserByCode(userId);
       if (!response) {
         await postUser();
       }

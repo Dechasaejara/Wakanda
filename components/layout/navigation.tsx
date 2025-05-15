@@ -254,7 +254,7 @@ const NavigationLayout: FC<NavigationLayoutProps> = ({ children }) => {
   return (
     <AppContext.Provider value={{ user, setUser, showError }}>
   <div
-        className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mx-auto overflow-hidden transition-colors duration-300"
+        className="flex flex-col min-h-screen bg-red-500 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mx-auto overflow-hidden transition-colors duration-300"
         style={{
           maxWidth: "var(--max-width-container)",
         }}
