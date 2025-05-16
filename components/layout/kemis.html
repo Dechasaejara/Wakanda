@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ye Habesha Libs Kiray - Ethiopian Cloth Rental</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Custom scrollbar for a cleaner look (optional) */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Light gray background */
+            color: var(--tg-theme-text-color, #1f2937); /* Use Telegram text color if available */
+            background-color: var(--tg-theme-bg-color, #f9fafb); /* Use Telegram bg color if available */
+        }
+        /* Ethiopian-inspired color palette */
+        .primary-color { color: #D4AF37; } /* Gold-like */
+        .bg-primary-color { background-color: #D4AF37; }
+        .hover-bg-primary-darker:hover { background-color: #c09b30; }
+
+        .secondary-color { color: #006400; } /* Dark Green */
+        .bg-secondary-color { background-color: #006400; }
+        .hover-bg-secondary-darker:hover { background-color: #004d00; }
+
+        .accent-color { color: #800000; } /* Maroon/Burgundy */
+        .bg-accent-color { background-color: #800000; }
+        
+        .hero-bg {
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://placehold.co/1920x800/EADDCA/333333?text=Traditional+Ethiopian+Attire');
+            background-size: cover;
+            background-position: center;
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        .cart-item-input { width: 4rem; }
+        @media (max-width: 400px) {
+            .cart-item-input { width: 3rem; }
+            .cart-item-details { flex-direction: column; align-items: flex-start; }
+            .cart-item-actions { margin-top: 0.5rem; width: 100%; justify-content: space-between; }
+        }
+        /* Style for Telegram Main Button (if not using its native appearance) */
+        #telegramCheckoutButton {
+            /* This button is visually hidden, Telegram.WebApp.MainButton is used instead */
+            display: none; 
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50" style="background-color: var(--tg-theme-secondary-bg-color, white);">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="#" class="text-3xl font-bold primary-color">
+                    YeHabesha<span class="secondary-color">Libs</span>
+                </a>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:primary-color transition duration-150">Home</a>
+                    <a href="#products" class="text-gray-600 hover:primary-color transition duration-150">Shop</a>
+                </nav>
+                <div class="flex items-center">
+                    <button id="cartButton" class="relative text-gray-600 hover:primary-color transition duration-150">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                        <span id="cartCount" class="absolute -top-2 -right-2 bg-accent-color text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </button>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobileMenuButton" class="text-gray-600 focus:outline-none">
+                        <i class="fas fa-bars fa-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobileMenu" class="md:hidden hidden bg-white shadow-lg py-2">
+            <a href="#" class="block px-4 py-2 text-gray-600 hover:bg-gray-100 hover:primary-color">Home</a>
+            <a href="#products" class="block px-4 py-2 text-gray-600 hover:bg-gray-100 hover:primary-color">Shop</a>
+        </div>
+    </header>
+
+    <section class="hero-bg text-white py-20 sm:py-32">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl sm:text-5xl font-bold mb-6 leading-tight">Rent Authentic Ethiopian Attire</h1>
+            <p class="text-lg sm:text-xl mb-8 max-w-3xl mx-auto">Experience Ethiopian culture for your special occasions.</p>
+            <a href="#products" class="bg-primary-color hover-bg-primary-darker text-white font-semibold py-3 px-8 rounded-lg text-lg transition duration-300 shadow-lg">Browse Collection</a>
+        </div>
+    </section>
+
+    <section id="products" class="py-16 sm:py-20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-12 secondary-color">Our Collection</h2>
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+                </div>
+        </div>
+    </section>
+
+    <div id="cartModal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 opacity-0 invisible z-[100]">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col transform scale-95" style="background-color: var(--tg-theme-bg-color, white);">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-2xl font-semibold secondary-color">Your Rental Cart</h3>
+                <button id="closeCartButton" class="text-gray-500 hover:text-red-500 transition duration-150">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            <div id="cartItemsContainer" class="p-6 space-y-4 overflow-y-auto flex-grow"></div>
+            <div class="p-6 border-t border-gray-200">
+                <div class="mb-4">
+                    <label for="rentalLocationInput" class="block text-sm font-medium text-gray-700 mb-1">Rental Location (City/Address)</label>
+                    <input type="text" id="rentalLocationInput" name="rentalLocation" placeholder="e.g., Addis Ababa, Bole" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xl font-semibold">Total:</span>
+                    <span id="cartTotal" class="text-xl font-bold primary-color">$0.00</span>
+                </div>
+                <button id="telegramCheckoutButton" class="w-full bg-primary-color hover-bg-primary-darker text-white font-semibold py-3 px-6 rounded-lg transition duration-300 shadow-md disabled:opacity-50">
+                    Proceed to Checkout (TG)
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="bg-gray-800 text-gray-300 py-12" style="background-color: var(--tg-theme-secondary-bg-color, #1f2937);">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; <span id="currentYear"></span> YeHabeshaLibs. All rights reserved.</p>
+            <p class="mt-2 text-sm">Powered by Telegram Mini Apps</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Product Data (price is now pricePerDay) ---
+        const products = [
+            { id: 1, name: 'Habesha Kemis (Modern)', pricePerDay: 50, image: 'https://placehold.co/400x300/FFF0E1/333333?text=Habesha+Kemis', description: 'Elegant white cotton kemis with intricate "tilf" embroidery.' },
+            { id: 2, name: 'Men\'s Kuta', pricePerDay: 40, image: 'https://placehold.co/400x300/E0E0E0/333333?text=Men+Kuta', description: 'Traditional handwoven cotton shawl for men.' },
+            { id: 3, name: 'Netela (Shemma)', pricePerDay: 30, image: 'https://placehold.co/400x300/FAFAD2/333333?text=Netela', description: 'Thin white cotton wrap with colored "tibeb" border.' },
+            { id: 4, name: 'Gabi', pricePerDay: 60, image: 'https://placehold.co/400x300/D3D3D3/333333?text=Gabi', description: 'Heavy handwoven cotton blanket, often white or grey.' },
+            // Add more products if needed
+        ];
+
+        // --- DOM Elements ---
+        const productGrid = document.getElementById('productGrid');
+        const cartButton = document.getElementById('cartButton');
+        const cartModal = document.getElementById('cartModal');
+        const closeCartButton = document.getElementById('closeCartButton');
+        const cartItemsContainer = document.getElementById('cartItemsContainer');
+        const cartCountEl = document.getElementById('cartCount');
+        const cartTotalEl = document.getElementById('cartTotal');
+        const rentalLocationInputEl = document.getElementById('rentalLocationInput');
+        const telegramCheckoutButton = document.getElementById('telegramCheckoutButton'); // Keep ref if needed for non-TG
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const currentYearEl = document.getElementById('currentYear');
+
+        // --- IndexedDB Setup ---
+        const DB_NAME = 'EthiopianRentalStoreDB';
+        const DB_VERSION = 1;
+        const CART_STORE_NAME = 'cartItems';
+        const LOCATION_STORE_NAME = 'rentalInfo'; // Using a separate store for location for clarity
+        let db;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (event) => reject('Error opening DB: ' + event.target.errorCode);
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    if (!db.objectStoreNames.contains(CART_STORE_NAME)) {
+                        db.createObjectStore(CART_STORE_NAME, { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains(LOCATION_STORE_NAME)) {
+                        // Using a fixed key for location, e.g., 'currentLocation'
+                        db.createObjectStore(LOCATION_STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        function getStore(storeName, mode) {
+            if (!db) throw new Error("DB not initialized. Call openDB first.");
+            const transaction = db.transaction(storeName, mode);
+            return transaction.objectStore(storeName);
+        }
+
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const store = getStore(storeName, 'readonly');
+                const request = store.getAll();
+                request.onerror = (event) => reject('Error fetching all from ' + storeName + ': ' + event.target.errorCode);
+                request.onsuccess = (event) => resolve(event.target.result);
+            });
+        }
+
+        async function dbPut(storeName, item) {
+            return new Promise((resolve, reject) => {
+                const store = getStore(storeName, 'readwrite');
+                const request = store.put(item);
+                request.onerror = (event) => reject('Error putting item in ' + storeName + ': ' + event.target.errorCode);
+                request.onsuccess = (event) => resolve(event.target.result);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const store = getStore(storeName, 'readwrite');
+                const request = store.delete(key);
+                request.onerror = (event) => reject('Error deleting item from ' + storeName + ': ' + event.target.errorCode);
+                request.onsuccess = (event) => resolve(event.target.result);
+            });
+        }
+        
+        async function dbClear(storeName) {
+            return new Promise((resolve, reject) => {
+                const store = getStore(storeName, 'readwrite');
+                const request = store.clear();
+                request.onerror = (event) => reject('Error clearing store ' + storeName + ': ' + event.target.errorCode);
+                request.onsuccess = (event) => resolve(event.target.result);
+            });
+        }
+
+
+        // --- Cart State (now primarily managed via IndexedDB) ---
+        let localCartCache = []; // Local cache for faster UI updates, synced with DB
+        let localRentalLocation = '';
+
+        // --- Telegram WebApp ---
+        const tg = window.Telegram.WebApp;
+
+        // --- Functions ---
+        function renderProducts() {
+            if (!productGrid) return;
+            productGrid.innerHTML = ''; 
+            products.forEach(product => {
+                const productCard = `
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col" style="background-color: var(--tg-theme-secondary-bg-color, white);">
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-56 sm:h-64 object-cover">
+                        <div class="p-4 sm:p-6 flex flex-col flex-grow">
+                            <h3 class="text-lg sm:text-xl font-semibold mb-2 primary-color">${product.name}</h3>
+                            <p class="text-gray-600 text-xs sm:text-sm mb-3 flex-grow">${product.description}</p>
+                            <p class="text-xl sm:text-2xl font-bold mb-4 secondary-color">$${product.pricePerDay.toFixed(2)} <span class="text-xs sm:text-sm font-normal text-gray-500">/ day</span></p>
+                            <button 
+                                class="mt-auto w-full bg-secondary-color hover:bg-secondary-darker text-white font-semibold py-2 px-4 rounded-lg transition duration-300 shadow-md add-to-cart-btn"
+                                data-product-id="${product.id}">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productGrid.innerHTML += productCard;
+            });
+
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productId = parseInt(e.target.dataset.productId);
+                    addToCart(productId);
+                });
+            });
+        }
+
+        async function addToCart(productId) {
+            const productToAdd = products.find(p => p.id === productId);
+            if (!productToAdd) return;
+
+            let existingItem = localCartCache.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                existingItem = { ...productToAdd, quantity: 1, duration: 1 };
+                localCartCache.push(existingItem);
+            }
+            await dbPut(CART_STORE_NAME, existingItem);
+            await updateCartDisplay();
+            showTemporaryMessage(`${productToAdd.name} added to cart!`, 'success');
+        }
+        
+        async function removeFromCart(productId) {
+            localCartCache = localCartCache.filter(item => item.id !== productId);
+            await dbDelete(CART_STORE_NAME, productId);
+            await updateCartDisplay();
+            showTemporaryMessage(`Item removed from cart.`, 'info');
+        }
+
+        async function updateCartItemQuantity(productId, newQuantity) {
+            const itemInCart = localCartCache.find(item => item.id === productId);
+            if (itemInCart) {
+                if (newQuantity <= 0) {
+                    await removeFromCart(productId); // This will also update DB and UI
+                } else {
+                    itemInCart.quantity = newQuantity;
+                    await dbPut(CART_STORE_NAME, itemInCart);
+                    await updateCartDisplay();
+                }
+            }
+        }
+        
+        async function updateCartItemDuration(productId, newDuration) {
+            const itemInCart = localCartCache.find(item => item.id === productId);
+            if (itemInCart) {
+                itemInCart.duration = Math.max(1, newDuration); // Min 1 day
+                await dbPut(CART_STORE_NAME, itemInCart);
+                await updateCartDisplay();
+            }
+        }
+
+        async function updateCartDisplay() {
+            // Load from DB to ensure cache is consistent, or rely on local cache if operations are atomic
+            localCartCache = await dbGetAll(CART_STORE_NAME);
+            const locationData = await dbGetAll(LOCATION_STORE_NAME);
+            localRentalLocation = locationData.find(loc => loc.id === 'currentLocation')?.value || '';
+
+
+            if (cartItemsContainer) {
+                cartItemsContainer.innerHTML = ''; 
+                if (localCartCache.length === 0) {
+                    cartItemsContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Your cart is empty.</p>';
+                } else {
+                    localCartCache.forEach(item => {
+                        const itemSubtotal = item.pricePerDay * item.quantity * item.duration;
+                        const cartItemHTML = `
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm gap-3" style="background-color: var(--tg-theme-secondary-bg-color, #f9fafb);">
+                                <div class="flex items-center space-x-3 flex-shrink-0">
+                                    <img src="${item.image}" alt="${item.name}" class="w-20 h-20 sm:w-16 sm:h-16 object-cover rounded-md">
+                                    <div class="cart-item-details">
+                                        <h4 class="font-semibold text-md">${item.name}</h4>
+                                        <p class="text-sm text-gray-500">$${item.pricePerDay.toFixed(2)}/day</p>
+                                        <p class="text-sm font-semibold primary-color">Subtotal: $${itemSubtotal.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 sm:space-x-3 cart-item-actions w-full sm:w-auto justify-end">
+                                    <div class="flex items-center">
+                                        <label for="quantity-${item.id}" class="text-xs mr-1">Qty:</label>
+                                        <input type="number" id="quantity-${item.id}" value="${item.quantity}" min="1" class="cart-item-input p-1 border rounded-md text-center quantity-input" data-product-id="${item.id}">
+                                    </div>
+                                    <div class="flex items-center">
+                                        <label for="duration-${item.id}" class="text-xs mr-1">Days:</label>
+                                        <input type="number" id="duration-${item.id}" value="${item.duration}" min="1" class="cart-item-input p-1 border rounded-md text-center duration-input" data-product-id="${item.id}">
+                                    </div>
+                                    <button class="text-red-500 hover:text-red-700 remove-from-cart-btn transition duration-150" data-product-id="${item.id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        cartItemsContainer.innerHTML += cartItemHTML;
+                    });
+                }
+            }
+
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productId = parseInt(e.currentTarget.dataset.productId);
+                    removeFromCart(productId);
+                });
+            });
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const productId = parseInt(e.target.dataset.productId);
+                    const newQuantity = parseInt(e.target.value);
+                    updateCartItemQuantity(productId, newQuantity);
+                });
+            });
+            document.querySelectorAll('.duration-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const productId = parseInt(e.target.dataset.productId);
+                    const newDuration = parseInt(e.target.value);
+                    updateCartItemDuration(productId, newDuration);
+                });
+            });
+
+            const total = localCartCache.reduce((sum, item) => sum + (item.pricePerDay * item.quantity * item.duration), 0);
+            if (cartTotalEl) cartTotalEl.textContent = `$${total.toFixed(2)}`;
+
+            const totalItems = localCartCache.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCountEl) cartCountEl.textContent = totalItems;
+
+            if (rentalLocationInputEl) rentalLocationInputEl.value = localRentalLocation;
+
+            // Update Telegram Main Button state
+            if (tg.MainButton) {
+                if (localCartCache.length > 0 && localRentalLocation.trim() !== '') {
+                    tg.MainButton.setText(`Checkout ($${total.toFixed(2)})`);
+                    tg.MainButton.setParams({
+                        text_color: tg.themeParams.button_text_color || '#ffffff',
+                        color: tg.themeParams.button_color || '#D4AF37' // Use primary color as default
+                    });
+                    tg.MainButton.show();
+                } else {
+                    tg.MainButton.hide();
+                }
+            }
+        }
+        
+        async function saveRentalLocation(locationValue) {
+            localRentalLocation = locationValue;
+            await dbPut(LOCATION_STORE_NAME, { id: 'currentLocation', value: locationValue });
+            await updateCartDisplay(); // Re-check MainButton state
+        }
+
+
+        function toggleCartModal() {
+            if (cartModal) {
+                const isOpen = !cartModal.classList.contains('invisible');
+                if (isOpen) {
+                    cartModal.classList.add('opacity-0', 'invisible');
+                    cartModal.querySelector('.modal-content').classList.add('scale-95');
+                } else {
+                    updateCartDisplay(); 
+                    cartModal.classList.remove('opacity-0', 'invisible');
+                    cartModal.querySelector('.modal-content').classList.remove('scale-95');
+                }
+            }
+        }
+        
+        function toggleMobileMenu() {
+            if (mobileMenu) mobileMenu.classList.toggle('hidden');
+        }
+
+        function showTemporaryMessage(message, type = 'info') {
+            // Use Telegram's haptic feedback if available
+            if (type === 'success' && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (type === 'error' && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            if (type === 'info' && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+
+            const messageDiv = document.createElement('div');
+            let bgColor = 'bg-blue-500'; 
+            if (type === 'success') bgColor = 'bg-green-500';
+            if (type === 'error') bgColor = 'bg-red-500';
+
+            messageDiv.className = `fixed bottom-5 right-5 ${bgColor} text-white py-3 px-5 rounded-lg shadow-xl text-sm transition-opacity duration-300 opacity-0 z-[150]`;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+
+            setTimeout(() => messageDiv.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                messageDiv.classList.add('opacity-0');
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 3000); 
+        }
+        
+        async function handleCheckout() {
+            if (localCartCache.length === 0) {
+                tg.showAlert('Your cart is empty. Please add items to rent.');
+                return;
+            }
+            if (!localRentalLocation.trim()) {
+                tg.showAlert('Please enter the rental location in the cart modal.');
+                rentalLocationInputEl.focus(); // Focus the input in the modal
+                if (cartModal.classList.contains('invisible')) { // Open cart modal if closed
+                    toggleCartModal();
+                }
+                return;
+            }
+
+            const totalCost = localCartCache.reduce((sum, item) => sum + (item.pricePerDay * item.quantity * item.duration), 0);
+            const orderData = {
+                items: localCartCache.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    duration: item.duration,
+                    pricePerDay: item.pricePerDay,
+                    itemTotal: item.pricePerDay * item.quantity * item.duration
+                })),
+                rentalLocation: localRentalLocation,
+                totalCost: totalCost,
+                currency: "USD", // Or your preferred currency
+                timestamp: new Date().toISOString(),
+                // Optionally include Telegram user info if needed and consented
+                // userId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null 
+            };
+
+            // Simulate sending data to bot. In a real app, the bot backend would receive this.
+            tg.sendData(JSON.stringify(orderData));
+            
+            // After sending data, it's common for the Mini App to close or show a success message from the bot.
+            // For this simulation, we'll clear the cart and show a local message.
+            
+            // Clear cart from DB
+            await dbClear(CART_STORE_NAME);
+            await dbPut(LOCATION_STORE_NAME, { id: 'currentLocation', value: '' }); // Clear location
+
+            localCartCache = [];
+            localRentalLocation = '';
+            
+            await updateCartDisplay(); // Update UI (empty cart, hide MainButton)
+            if (!cartModal.classList.contains('invisible')) { // Close cart modal if open
+                toggleCartModal();
+            }
+            // tg.close(); // Optionally close the Mini App after successful checkout
+        }
+
+
+        // --- Event Listeners ---
+        if (cartButton) cartButton.addEventListener('click', toggleCartModal);
+        if (closeCartButton) closeCartButton.addEventListener('click', toggleCartModal);
+        if (mobileMenuButton) mobileMenuButton.addEventListener('click', toggleMobileMenu);
+        
+        if (rentalLocationInputEl) {
+            rentalLocationInputEl.addEventListener('input', (e) => { // Use 'input' for real-time update
+                saveRentalLocation(e.target.value);
+            });
+        }
+
+        if (cartModal) {
+            cartModal.addEventListener('click', (e) => {
+                if (e.target === cartModal) toggleCartModal();
+            });
+        }
+        
+        // The telegramCheckoutButton in the modal is a fallback or for non-TG context.
+        // The primary checkout is now via tg.MainButton.onClick(handleCheckout);
+        if (telegramCheckoutButton) {
+             telegramCheckoutButton.addEventListener('click', handleCheckout);
+        }
+
+
+        // --- Initial Setup ---
+        async function initializeApp() {
+            try {
+                await openDB();
+                await updateCartDisplay(); // Load cart and location from DB
+                renderProducts();
+                
+                if (currentYearEl) currentYearEl.textContent = new Date().getFullYear();
+
+                // Telegram WebApp Initialization
+                tg.ready();
+                tg.expand(); // Expand the Mini App to full height
+
+                // Configure Main Button
+                tg.MainButton.setText('Checkout');
+                tg.MainButton.onClick(handleCheckout);
+                // MainButton visibility is handled in updateCartDisplay
+
+                // Optional: Configure Back Button (if you have multi-page navigation within the Mini App)
+                // tg.BackButton.onClick(() => { /* handle back navigation */ });
+                // if (/* some condition for showing back button */) tg.BackButton.show(); else tg.BackButton.hide();
+
+                // Optional: Apply Telegram theme variables (basic example)
+                // document.body.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+                // document.body.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+                // You can define more CSS variables for other tg.themeParams like hint_color, link_color, button_color etc.
+
+                console.log("Telegram WebApp Initialized. Theme:", tg.themeParams);
+                // console.log("Telegram User:", tg.initDataUnsafe.user);
+
+
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                showTemporaryMessage("Error initializing application. Please try again.", "error");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
