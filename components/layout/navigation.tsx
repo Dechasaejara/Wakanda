@@ -262,12 +262,12 @@ const NavigationLayout: FC<NavigationLayoutProps> = ({ children }) => {
         {/* Main content area */}
         <main
           className="flex-grow overflow-y-auto overscroll-none"
-          style={{
-            paddingTop: "var(--space-page)",
-            paddingLeft: "var(--space-page)",
-            paddingRight: "var(--space-page)",
-            paddingBottom: "calc(var(--nav-height) + var(--space-page))",
-          }}
+          // style={{
+          //   paddingTop: "var(--space-page)",
+          //   paddingLeft: "var(--space-page)",
+          //   paddingRight: "var(--space-page)",
+          //   paddingBottom: "calc(var(--nav-height) + var(--space-page))",
+          // }}
         >
           <div
             className="space-y-6 animate-fade-in bg-white/30 dark:bg-gray-800/30 backdrop-blur-md rounded-2xl shadow-lg p-1"
