@@ -3,13 +3,13 @@ import { Questions } from "@/backend/db/schema";
 import QuizFilter from "@/components/quiz/QuizFilter";
 import { unstable_cache } from "next/cache";
 
-// export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 const getQuestions = unstable_cache(
   async () => {
     return await db.select().from(Questions);
   },
   ["questions"],
-  { revalidate: 1600, tags: ["questions"] }
+  { revalidate: 60, tags: ["questions"] }
 );
 export default async function Home() {
   const allQuestions = await getQuestions();
