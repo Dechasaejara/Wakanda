@@ -359,8 +359,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   }, []);
 
   const renderStartScreen = () => (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-6">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-8 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-2">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-2 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
         <div className="relative inline-block mx-auto">
           <div className="absolute inset-0 bg-teal-400 rounded-full blur-xl opacity-25 animate-pulse"></div>
           <PlayCircleIcon className="h-24 w-24 text-teal-500 dark:text-teal-400 relative animate-pulse-ring" />
@@ -414,7 +414,7 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   );
 
   const renderLoadingScreen = () => (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-6">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-2">
       <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-8 text-center border border-slate-100 dark:border-slate-700 animate-pulse">
         <div className="relative mx-auto w-20 h-20 mb-6">
           <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-700"></div>
@@ -432,8 +432,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   );
 
   const renderQuizContent = () => (
-    <div className="py-4 px-4 sm:px-6 animate-slide-in-bottom">
-      <div className="w-full max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-4 sm:p-6 border border-slate-100 dark:border-slate-700">
+    <div className="py-4 px-2 sm:px-1 animate-slide-in-bottom">
+      <div className="w-full max-w-lg mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 sm:p-2 border border-slate-100 dark:border-slate-700">
         <div className="space-y-4 sm:space-y-6">
           <Header
             score={score}
