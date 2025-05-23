@@ -17,7 +17,7 @@ export default function FilterTabs({
   options, 
   activeId, 
   onChange, 
-  containerClassName = "bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm overflow-hidden" 
+  containerClassName = "bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm overflow-hidden" 
 }: FilterTabsProps) {
   return (
     <div className={containerClassName}>

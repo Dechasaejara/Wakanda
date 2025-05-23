@@ -51,7 +51,7 @@ const QuestionCard: FC<QuestionCardProps> = ({
     : '';
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm">
       <div className="flex justify-between items-start mb-5">
         <h2 className="font-medium text-lg">{question.question}</h2>
         

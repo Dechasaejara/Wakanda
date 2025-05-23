@@ -359,8 +359,8 @@ const QuizContainer: React.FC<QuizContainerProps> = ({ questions, quiz }) => {
   }, []);
 
   const renderStartScreen = () => (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-4 sm:px-2">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-2 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-4 px-2">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 text-center space-y-8 border border-slate-100 dark:border-slate-700 animate-scale-in">
         <div className="relative inline-block mx-auto">
           <div className="absolute inset-0 bg-teal-400 rounded-full blur-xl opacity-25 animate-pulse"></div>
           <PlayCircleIcon className="h-24 w-24 text-teal-500 dark:text-teal-400 relative animate-pulse-ring" />

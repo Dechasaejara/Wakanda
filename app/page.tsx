@@ -16,7 +16,7 @@ export default async function Home() {
 
   return (
     <main
-      className="container mx-auto py-8 px-3 sm:px-1 lg:px-2"
+      className="container mx-auto py-8 px-1 lg:px-2"
       style={{
         backdropFilter: "blur(10px)",
         borderRadius: "20px",
