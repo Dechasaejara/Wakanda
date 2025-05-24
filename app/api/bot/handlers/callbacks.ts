@@ -1,121 +1,109 @@
-import { Bot } from "grammy";
+import { Bot, Context } from "grammy";
 import { db } from "@/backend/db/drizzle";
-import { eq,asc } from "drizzle-orm";
-import {
-  Profiles,
-  Leaderboard,
-  UserProgress,
-  Challenges,
-} from "@/backend/db/schema";
+import { eq, asc } from "drizzle-orm";
+import { Profiles, Leaderboard } from "@/backend/db/schema";
+import { DatabaseError } from "pg";
+
+async function handleDatabaseOperation<T>(operation: Promise<T>, errorMessage: string): Promise<T> {
+  try {
+    return await operation;
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      console.error("Database error:", error.message);
+      throw new Error("Database operation failed");
+    }
+    throw new Error(errorMessage);
+  }
+}
+
+async function handleViewProfile(ctx: Context) {
+  await ctx.answerCallbackQuery({ text: "Loading profile..." });
+  
+  const userId = ctx.from?.id;
+  if (!userId) {
+    await ctx.reply("❌ Could not identify user.");
+    return;
+  }
+
+  try {
+    const profile = await handleDatabaseOperation(
+      db.select()
+        .from(Profiles)
+        .where(eq(Profiles.userId, userId))
+        .limit(1)
+        .execute(),
+      "Failed to fetch profile"
+    );
+
+    if (!profile[0]) {
+      await ctx.reply("❌ Profile not found. Use /start to create one.");
+      return;
+    }
+
+    const p = profile[0];
+    await ctx.reply(
+      `👤 **Profile Information**\n` +
+      `Name: ${p.firstName} ${p.lastName}\n` +
+      `Email: ${p.email || "Not set"}\n` +
+      `Phone: ${p.phone || "Not set"}\n` +
+      `Badge: ${p.badge}\n` +
+      `Points: ${p.points}\n` +
+      `Hearts: ${p.heart}`,
+      { parse_mode: "Markdown" }
+    );
+  } catch (error) {
+    console.error("Profile error:", error);
+    await ctx.reply("❌ Failed to load profile. Please try again later.");
+  }
+}
+
+async function handleViewLeaderboard(ctx: Context) {
+  await ctx.answerCallbackQuery({ text: "Loading leaderboard..." });
+
+  try {
+    const leaderboard = await handleDatabaseOperation(
+      db.select({ username: Leaderboard.username, points: Leaderboard.points, rank: Leaderboard.rank })
+        .from(Leaderboard)
+        .orderBy(asc(Leaderboard.rank))
+        .limit(10)
+        .execute(),
+      "Failed to fetch leaderboard"
+    );
+
+    if (!leaderboard.length) {
+      await ctx.reply("🏆 Leaderboard is currently empty.");
+      return;
+    }
+
+    const leaderboardMessage = leaderboard
+      .map(entry => `#${entry.rank} ${entry.username} (${entry.points} pts)`)
+      .join("\n");
+    await ctx.reply(`🏆 **Top 10 Leaderboard**\n${leaderboardMessage}`, { parse_mode: "Markdown" });
+  } catch (error) {
+    console.error("Leaderboard error:", error);
+    await ctx.reply("❌ Failed to load leaderboard. Please try again later.");
+  }
+}
 
 export function registerCallbackHandlers(bot: Bot) {
   bot.on("callback_query:data", async (ctx) => {
     const data = ctx.callbackQuery.data;
-    const userId = ctx.from?.id;
-
+    
     try {
       switch (data) {
         case "view_profile":
-          if (!userId) {
-            await ctx.answerCallbackQuery({ text: "User ID not found." });
-            return;
-          }
-          const profile = await db
-            .select()
-            .from(Profiles)
-            .where(eq(Profiles.userId, userId))
-            .limit(1)
-            .execute();
-
-          if (profile.length === 0) {
-            await ctx.reply("Profile not found. Please register first.");
-          } else {
-            const p = profile[0];
-            await ctx.reply(
-              `Profile Info:\n` +
-                `Name: ${p.firstName} ${p.lastName}\n` +
-                `Email: ${p.email || "N/A"}\n` +
-                `Phone: ${p.phone || "N/A"}\n` +
-                `Badge: ${p.badge}\n` +
-                `Points: ${p.points}\n` +
-                `Hearts: ${p.heart}`
-            );
-          }
-          await ctx.answerCallbackQuery();
+          await handleViewProfile(ctx);
           break;
-
         case "view_leaderboard":
-          const leaderboard = await db
-            .select()
-            .from(Leaderboard)
-            .orderBy(asc(Leaderboard.rank))
-            .limit(10)
-            .execute();
-
-          if (leaderboard.length === 0) {
-            await ctx.reply("Leaderboard is empty.");
-          } else {
-            let message = "🏆 Leaderboard Top 10 🏆\n";
-            leaderboard.forEach((entry: any) => {
-              message += `#${entry.rank} - ${entry.username} (${entry.points} points)\n`;
-            });
-            await ctx.reply(message);
-          }
-          await ctx.answerCallbackQuery();
+          await handleViewLeaderboard(ctx);
           break;
-
-        case "view_challenges":
-          const challenges = await db
-            .select()
-            .from(Challenges)
-            .limit(5)
-            .execute();
-          if (challenges.length === 0) {
-            await ctx.reply("No active challenges at the moment.");
-          } else {
-            let message = "🔥 Active Challenges 🔥\n";
-            challenges.forEach((c: any) => {
-              message += `• ${c.title} (${c.difficulty}) - ${c.points} points\n`;
-            });
-            await ctx.reply(message);
-          }
-          await ctx.answerCallbackQuery();
-          break;
-
-        case "view_progress":
-          if (!userId) {
-            await ctx.answerCallbackQuery({ text: "User ID not found." });
-            return;
-          }
-          const progress = await db
-            .select()
-            .from(UserProgress)
-            .where(eq(UserProgress.userCode, userId.toString()))
-            .limit(10)
-            .execute();
-
-          if (progress.length === 0) {
-            await ctx.reply("No progress found. Start learning!");
-          } else {
-            let message = "📊 Your Progress 📊\n";
-            progress.forEach((p: any) => {
-              message += `Module ${p.moduleId}, Lesson ${p.lessonId}: Score ${
-                p.score
-              }, Completed: ${p.completed ? "Yes" : "No"}\n`;
-            });
-            await ctx.reply(message);
-          }
-          await ctx.answerCallbackQuery();
-          break;
-
         default:
-          await ctx.answerCallbackQuery({ text: "Unknown action." });
+          await ctx.answerCallbackQuery({ text: "⚠️ Unknown action" });
+          return;
       }
     } catch (error) {
-      console.error(error);
-      try {
-        await ctx.reply("An error occurred while processing your request.");
-      } catch {}
+      console.error(`Callback [${data}] error:`, error);
+      await ctx.answerCallbackQuery({ text: "❌ Action failed" });
     }
   });
 }
