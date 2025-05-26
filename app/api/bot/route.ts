@@ -2,6 +2,7 @@ import { Bot, webhookCallback } from "grammy";
 import { db } from "@/backend/db/drizzle";
 import { Questions } from "@/backend/db/schema";
 import { DatabaseError } from "@neondatabase/serverless";
+import { NextRequest, NextResponse } from "next/server";
 
 // --- Environment Validation ---
 const token = process.env.PRODUCTION_BOT_TOKEN;
@@ -127,14 +128,16 @@ bot.on("message:document", async (ctx) => {
 // console.log("Bot started in long-polling mode...");
 
 // Export the webhook handler for Next.js API routes
-export const POST = webhookCallback(bot, "std/http");
-
-// Optional: Add a dedicated endpoint for setting the webhook
-// export async function setupWebhook() {
-//   try {
-//     await bot.api.setWebhook(webhookUrl);
-//     console.log(`Webhook set to: ${webhookUrl}`);
-//   } catch (error) {
-//     console.error("Failed to set webhook:", error);
-//   }
-// }
+// export const POST = webhookCallback(bot, "std/http");
+export const POST = async (req: NextRequest) => {
+  try {
+    const handler = webhookCallback(bot, "std/http");
+    return await handler(req);
+  } catch (error) {
+    console.error("Webhook handler error:", error);
+    return NextResponse.json(
+      { status: "error", message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
