@@ -130,11 +130,11 @@ bot.on("message:document", async (ctx) => {
 export const POST = webhookCallback(bot, "std/http");
 
 // Optional: Add a dedicated endpoint for setting the webhook
-export async function setupWebhook() {
-  try {
-    await bot.api.setWebhook(webhookUrl);
-    console.log(`Webhook set to: ${webhookUrl}`);
-  } catch (error) {
-    console.error("Failed to set webhook:", error);
-  }
-}
+// export async function setupWebhook() {
+//   try {
+//     await bot.api.setWebhook(webhookUrl);
+//     console.log(`Webhook set to: ${webhookUrl}`);
+//   } catch (error) {
+//     console.error("Failed to set webhook:", error);
+//   }
+// }
