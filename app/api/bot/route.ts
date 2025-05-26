@@ -59,7 +59,7 @@ async function validateJsonQuestions(content: string): Promise<any[]> {
 async function storeQuestionInDatabase(question: any) {
   try {
     const result = await db.insert(Questions).values(question).returning();
-    // console.log(`✅ Successfully added question:`, question);
+    console.log(`✅ Successfully added question:`, question);
     return result;
   } catch (error) {
     if (error instanceof DatabaseError) {
@@ -115,20 +115,12 @@ bot.on("message:document", async (ctx) => {
       `✅ Successfully added ${questions.length} questions to the database.`
     );
   } catch (error) {
-    if (error instanceof DatabaseError) {
-      console.error("Database error during question storage:", error.message);
-      throw new Error("A database error occurred while saving.");
-    }
-    throw error;
+    console.error("Error processing file:", error);
+    await ctx.reply(`❌ Failed to process file. Reason: ${error}`);
   }
 });
 
-// --- Start the Bot ---
-// bot.start();
-// console.log("Bot started in long-polling mode...");
-
-// Export the webhook handler for Next.js API routes
-// export const POST = webhookCallback(bot, "std/http");
+// --- Webhook Handler ---
 export const POST = async (req: NextRequest) => {
   try {
     const handler = webhookCallback(bot, "std/http");
@@ -141,3 +133,13 @@ export const POST = async (req: NextRequest) => {
     );
   }
 };
+
+// --- Webhook Setup (Optional) ---
+(async () => {
+  try {
+    await bot.api.setWebhook(webhookUrl);
+    console.log(`✅ Webhook set to: ${webhookUrl}`);
+  } catch (error) {
+    console.error("Failed to set webhook:", error);
+  }
+})();
