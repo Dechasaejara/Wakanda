@@ -1,0 +1,2890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shop Manager</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tg: {
+                            bg: 'var(--tg-theme-bg-color, #ffffff)',
+                            text: 'var(--tg-theme-text-color, #000000)',
+                            hint: 'var(--tg-theme-hint-color, #999999)',
+                            link: 'var(--tg-theme-link-color, #2678b6)',
+                            button: 'var(--tg-theme-button-color, #5D5CDE)',
+                            buttonText: 'var(--tg-theme-button-text-color, #ffffff)',
+                            secondary: 'var(--tg-theme-secondary-bg-color, #f0f0f0)'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style type="text/css">
+        :root {
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        body {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+        .page-container {
+            padding-bottom: calc(64px + var(--safe-area-inset-bottom));
+            padding-top: 56px;
+            min-height: calc(100vh - 56px - 64px - var(--safe-area-inset-bottom));
+        }
+        .tab-active {
+            color: var(--tg-theme-button-color, #5D5CDE);
+            border-bottom: 2px solid var(--tg-theme-button-color, #5D5CDE);
+        }
+        .bottom-tabs {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border-top: 1px solid var(--tg-theme-hint-color, #999999);
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+            padding-bottom: var(--safe-area-inset-bottom);
+        }
+        input, select, textarea {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000000);
+            border: 1px solid var(--tg-theme-hint-color, #999999);
+        }
+        button.primary {
+            background-color: var(--tg-theme-button-color, #5D5CDE);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+        .custom-loader {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 5px solid var(--tg-theme-button-color, #5D5CDE);
+            border-bottom-color: transparent;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        .list-item {
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .list-item:active {
+            transform: scale(0.98);
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+        .haptic {
+            transition: transform 0.1s;
+        }
+        .haptic:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Tabs -->
+    <div class="fixed top-0 left-0 right-0 z-10 bg-tg-bg border-b border-tg-hint/20 shadow-sm">
+        <div class="flex justify-between items-center px-1 h-14">
+            <div class="flex overflow-x-auto space-x-2 w-full no-scrollbar">
+                <button id="tab-dashboard" class="tab-btn tab-active whitespace-nowrap px-4 py-4 text-sm font-medium">Dashboard</button>
+                <button id="tab-inventory" class="tab-btn whitespace-nowrap px-4 py-4 text-sm font-medium">Inventory</button>
+                <button id="tab-sales" class="tab-btn whitespace-nowrap px-4 py-4 text-sm font-medium">Sales</button>
+                <button id="tab-invoices" class="tab-btn whitespace-nowrap px-4 py-4 text-sm font-medium">Invoices</button>
+                <button id="tab-reports" class="tab-btn whitespace-nowrap px-4 py-4 text-sm font-medium">Reports</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="page-container fade-in">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page active px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-tg-text">Shop Manager</h1>
+                <button id="refresh-data" class="haptic rounded-full p-2 bg-tg-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-tg-secondary rounded-lg p-4 shadow-sm">
+                    <p class="text-xs text-tg-hint mb-1">Total Products</p>
+                    <p id="total-products" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-tg-secondary rounded-lg p-4 shadow-sm">
+                    <p class="text-xs text-tg-hint mb-1">Total Sales</p>
+                    <p id="total-sales" class="text-2xl font-bold">$0</p>
+                </div>
+                <div class="bg-tg-secondary rounded-lg p-4 shadow-sm">
+                    <p class="text-xs text-tg-hint mb-1">Low Stock</p>
+                    <p id="low-stock" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-tg-secondary rounded-lg p-4 shadow-sm">
+                    <p class="text-xs text-tg-hint mb-1">Today's Sales</p>
+                    <p id="today-sales" class="text-2xl font-bold">$0</p>
+                </div>
+            </div>
+
+            <h2 class="text-lg font-semibold mb-3">Recent Activities</h2>
+            <div id="recent-activities" class="space-y-3 mb-6">
+                <div class="flex items-center justify-center py-8">
+                    <p class="text-tg-hint text-sm">No recent activities</p>
+                </div>
+            </div>
+
+            <h2 class="text-lg font-semibold mb-3">Quick Actions</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button class="quick-action haptic primary rounded-lg py-3 px-4 flex flex-col items-center justify-center" data-target="inventory-add">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Product
+                </button>
+                <button class="quick-action haptic primary rounded-lg py-3 px-4 flex flex-col items-center justify-center" data-target="sales-add">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    New Sale
+                </button>
+                <button class="quick-action haptic primary rounded-lg py-3 px-4 flex flex-col items-center justify-center" data-target="invoices-create">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Create Invoice
+                </button>
+                <button class="quick-action haptic primary rounded-lg py-3 px-4 flex flex-col items-center justify-center" data-target="reports">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    View Reports
+                </button>
+            </div>
+        </div>
+
+        <!-- Inventory Page -->
+        <div id="page-inventory" class="page hidden px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-tg-text">Inventory</h1>
+                <button id="add-product-btn" class="haptic flex items-center rounded-lg py-2 px-3 primary text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Product
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" id="inventory-search" placeholder="Search products..." class="w-full px-4 py-2 rounded-lg text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-2.5 text-tg-hint" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div id="inventory-list" class="space-y-3 mb-6">
+                <div class="flex items-center justify-center py-12">
+                    <div class="custom-loader"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Page -->
+        <div id="page-sales" class="page hidden px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-tg-text">Sales</h1>
+                <button id="new-sale-btn" class="haptic flex items-center rounded-lg py-2 px-3 primary text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    New Sale
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex space-x-2">
+                    <button id="sales-today" class="sales-filter haptic text-sm rounded-lg py-2 px-3 bg-tg-button text-tg-buttonText">Today</button>
+                    <button id="sales-week" class="sales-filter haptic text-sm rounded-lg py-2 px-3 bg-tg-secondary">This Week</button>
+                    <button id="sales-month" class="sales-filter haptic text-sm rounded-lg py-2 px-3 bg-tg-secondary">This Month</button>
+                    <button id="sales-all" class="sales-filter haptic text-sm rounded-lg py-2 px-3 bg-tg-secondary">All</button>
+                </div>
+            </div>
+            
+            <div id="sales-list" class="space-y-3 mb-6">
+                <div class="flex items-center justify-center py-12">
+                    <div class="custom-loader"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices Page -->
+        <div id="page-invoices" class="page hidden px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-tg-text">Invoices</h1>
+                <button id="create-invoice-btn" class="haptic flex items-center rounded-lg py-2 px-3 primary text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create Invoice
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" id="invoice-search" placeholder="Search invoices..." class="w-full px-4 py-2 rounded-lg text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-2.5 text-tg-hint" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div id="invoices-list" class="space-y-3 mb-6">
+                <div class="flex items-center justify-center py-12">
+                    <div class="custom-loader"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Page -->
+        <div id="page-reports" class="page hidden px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-tg-text">Reports & Analytics</h1>
+                <div class="flex">
+                    <button id="download-report" class="haptic flex items-center rounded-lg py-2 px-3 primary text-sm font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Export
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <select id="report-period" class="w-full px-4 py-2 rounded-lg text-base mb-4">
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">This Quarter</option>
+                    <option value="year">This Year</option>
+                </select>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg shadow-sm mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Sales Summary</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">Total Revenue</p>
+                            <p id="report-revenue" class="text-xl font-bold">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Total Sales</p>
+                            <p id="report-sales-count" class="text-xl font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Average Sale</p>
+                            <p id="report-avg-sale" class="text-xl font-bold">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Profit Margin</p>
+                            <p id="report-profit-margin" class="text-xl font-bold">0%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg shadow-sm mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Top Products</h3>
+                    <div id="top-products" class="space-y-2">
+                        <div class="flex items-center justify-center py-4">
+                            <p class="text-tg-hint text-sm">No data available</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-2">Inventory Status</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">In Stock</p>
+                            <p id="report-in-stock" class="text-xl font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Low Stock</p>
+                            <p id="report-low-stock" class="text-xl font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Out of Stock</p>
+                            <p id="report-out-stock" class="text-xl font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Inventory Value</p>
+                            <p id="report-inventory-value" class="text-xl font-bold">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Product Form -->
+        <div id="page-inventory-add" class="page hidden px-4 py-6">
+            <div class="flex items-center mb-6">
+                <button id="back-to-inventory" class="haptic mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-tg-text">Add New Product</h1>
+            </div>
+            
+            <form id="add-product-form" class="space-y-4">
+                <div>
+                    <label for="product-name" class="block text-sm font-medium mb-1">Product Name*</label>
+                    <input type="text" id="product-name" name="name" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="Enter product name">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="product-price" class="block text-sm font-medium mb-1">Price*</label>
+                        <input type="number" id="product-price" name="price" step="0.01" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label for="product-cost" class="block text-sm font-medium mb-1">Cost</label>
+                        <input type="number" id="product-cost" name="cost" step="0.01" class="w-full px-4 py-2 rounded-lg text-base" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="product-stock" class="block text-sm font-medium mb-1">Stock Quantity*</label>
+                        <input type="number" id="product-stock" name="stock" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="product-low-stock" class="block text-sm font-medium mb-1">Low Stock Alert</label>
+                        <input type="number" id="product-low-stock" name="lowStock" class="w-full px-4 py-2 rounded-lg text-base" placeholder="5">
+                    </div>
+                </div>
+                <div>
+                    <label for="product-category" class="block text-sm font-medium mb-1">Category</label>
+                    <select id="product-category" name="category" class="w-full px-4 py-2 rounded-lg text-base">
+                        <option value="">Select a category</option>
+                        <option value="Food">Food</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="product-description" class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="product-description" name="description" rows="3" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Product description..."></textarea>
+                </div>
+                <div>
+                    <label for="product-barcode" class="block text-sm font-medium mb-1">Barcode (Optional)</label>
+                    <input type="text" id="product-barcode" name="barcode" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Enter barcode">
+                </div>
+                <button type="submit" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Add Product</button>
+            </form>
+        </div>
+
+        <!-- New Sale Form -->
+        <div id="page-sales-add" class="page hidden px-4 py-6">
+            <div class="flex items-center mb-6">
+                <button id="back-to-sales" class="haptic mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-tg-text">New Sale</h1>
+            </div>
+            
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" id="sale-product-search" placeholder="Search products to add..." class="w-full px-4 py-2 rounded-lg text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-2.5 text-tg-hint" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div id="sale-products-results" class="max-h-40 overflow-y-auto mb-4 rounded-lg bg-tg-secondary hidden">
+                <!-- Search results will appear here -->
+            </div>
+            
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2">Cart</h2>
+                <div id="sale-cart" class="space-y-2 mb-4">
+                    <div class="flex items-center justify-center py-4 text-tg-hint text-sm">
+                        No products added to cart
+                    </div>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg mb-4">
+                    <div class="flex justify-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="sale-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Tax (10%):</span>
+                        <span id="sale-tax">$0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold">
+                        <span>Total:</span>
+                        <span id="sale-total">$0.00</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="sale-customer" class="block text-sm font-medium mb-1">Customer Name (Optional)</label>
+                        <input type="text" id="sale-customer" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Walk-in customer">
+                    </div>
+                    <div>
+                        <label for="sale-payment" class="block text-sm font-medium mb-1">Payment Method</label>
+                        <select id="sale-payment" class="w-full px-4 py-2 rounded-lg text-base">
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Card</option>
+                            <option value="Transfer">Bank Transfer</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sale-notes" class="block text-sm font-medium mb-1">Notes (Optional)</label>
+                        <textarea id="sale-notes" rows="2" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Additional notes..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button id="complete-sale" class="haptic flex-1 py-3 rounded-lg primary text-sm font-medium" disabled>Complete Sale</button>
+                <button id="create-invoice-from-sale" class="haptic flex-1 py-3 rounded-lg bg-tg-secondary text-sm font-medium" disabled>Create Invoice</button>
+            </div>
+        </div>
+        
+        <!-- Create Invoice Form -->
+        <div id="page-invoices-create" class="page hidden px-4 py-6">
+            <div class="flex items-center mb-6">
+                <button id="back-to-invoices" class="haptic mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-tg-text">Create Invoice</h1>
+            </div>
+            
+            <form id="create-invoice-form" class="space-y-4">
+                <div>
+                    <label for="invoice-customer" class="block text-sm font-medium mb-1">Customer Name*</label>
+                    <input type="text" id="invoice-customer" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="Enter customer name">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="invoice-date" class="block text-sm font-medium mb-1">Invoice Date*</label>
+                        <input type="date" id="invoice-date" required class="w-full px-4 py-2 rounded-lg text-base">
+                    </div>
+                    <div>
+                        <label for="invoice-due" class="block text-sm font-medium mb-1">Due Date*</label>
+                        <input type="date" id="invoice-due" required class="w-full px-4 py-2 rounded-lg text-base">
+                    </div>
+                </div>
+                
+                <h2 class="text-lg font-semibold">Items</h2>
+                
+                <div id="invoice-items" class="space-y-4">
+                    <div class="invoice-item bg-tg-secondary p-4 rounded-lg">
+                        <div class="grid grid-cols-2 gap-4 mb-2">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Item</label>
+                                <input type="text" class="invoice-item-name w-full px-4 py-2 rounded-lg text-base" placeholder="Item name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Price</label>
+                                <input type="number" class="invoice-item-price w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Quantity</label>
+                                <input type="number" class="invoice-item-qty w-full px-4 py-2 rounded-lg text-base" placeholder="1" min="1" value="1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Total</label>
+                                <input type="number" class="invoice-item-total w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" id="add-invoice-item" class="haptic w-full py-2 rounded-lg bg-tg-secondary text-sm font-medium">
+                    + Add Another Item
+                </button>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg">
+                    <div class="flex justify-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="invoice-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Tax (10%):</span>
+                        <span id="invoice-tax">$0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold">
+                        <span>Total:</span>
+                        <span id="invoice-total">$0.00</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="invoice-notes" class="block text-sm font-medium mb-1">Notes</label>
+                    <textarea id="invoice-notes" rows="2" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Additional notes..."></textarea>
+                </div>
+                
+                <button type="submit" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Create Invoice</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="bottom-tabs fixed bottom-0 left-0 right-0 h-16 flex justify-between items-center px-2 z-10">
+        <button class="bottom-tab haptic flex flex-col items-center justify-center flex-1 pt-1 pb-1" data-target="dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="text-xs mt-1">Home</span>
+        </button>
+        <button class="bottom-tab haptic flex flex-col items-center justify-center flex-1 pt-1 pb-1" data-target="inventory">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <span class="text-xs mt-1">Inventory</span>
+        </button>
+        <button class="bottom-tab haptic flex flex-col items-center justify-center flex-1 pt-1 pb-1" data-target="sales">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span class="text-xs mt-1">Sales</span>
+        </button>
+        <button class="bottom-tab haptic flex flex-col items-center justify-center flex-1 pt-1 pb-1" data-target="invoices">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-xs mt-1">Invoices</span>
+        </button>
+        <button class="bottom-tab haptic flex flex-col items-center justify-center flex-1 pt-1 pb-1" data-target="reports">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span class="text-xs mt-1">Reports</span>
+        </button>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Notify Telegram that the WebApp is ready
+            tg.ready();
+            
+            // Set the header color
+            tg.setHeaderColor('secondary_bg_color');
+            
+            // Initialize app data if not exists
+            initializeAppData();
+            
+            // Load initial data
+            loadDashboardData();
+            loadInventory();
+            loadSales('today');
+            loadInvoices();
+            loadReports('week');
+            
+            // Set current date for invoice
+            document.getElementById('invoice-date').valueAsDate = new Date();
+            
+            // Set due date as 7 days from now
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 7);
+            document.getElementById('invoice-due').valueAsDate = dueDate;
+            
+            // Setup event listeners
+            setupEventListeners();
+        });
+        
+        // Data Models
+        const STORAGE_KEYS = {
+            PRODUCTS: 'shop_manager_products',
+            SALES: 'shop_manager_sales',
+            INVOICES: 'shop_manager_invoices',
+            ACTIVITIES: 'shop_manager_activities'
+        };
+        
+        // Data Initialization
+        function initializeAppData() {
+            // Initialize products if not exists
+            if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
+                localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+            }
+            
+            // Initialize sales if not exists
+            if (!localStorage.getItem(STORAGE_KEYS.SALES)) {
+                localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
+            }
+            
+            // Initialize invoices if not exists
+            if (!localStorage.getItem(STORAGE_KEYS.INVOICES)) {
+                localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify([]));
+            }
+            
+            // Initialize activities if not exists
+            if (!localStorage.getItem(STORAGE_KEYS.ACTIVITIES)) {
+                localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify([]));
+            }
+        }
+        
+        // Helper Functions
+        function formatCurrency(amount) {
+            return '$' + parseFloat(amount).toFixed(2);
+        }
+        
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        
+        function formatTime(date) {
+            return new Date(date).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+        
+        function showLoading(element) {
+            element.innerHTML = `
+                <div class="flex items-center justify-center py-12">
+                    <div class="custom-loader"></div>
+                </div>
+            `;
+        }
+        
+        function addActivity(activity) {
+            const activities = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVITIES));
+            activities.unshift({
+                id: generateId(),
+                timestamp: new Date().toISOString(),
+                description: activity
+            });
+            
+            // Keep only the latest 50 activities
+            if (activities.length > 50) {
+                activities.length = 50;
+            }
+            
+            localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities));
+            loadActivities();
+        }
+        
+        // Navigation Functions
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show the selected page
+            const page = document.getElementById(`page-${pageId}`);
+            if (page) {
+                page.classList.remove('hidden');
+                page.classList.add('fade-in');
+            }
+            
+            // Update top tabs
+            document.querySelectorAll('.tab-btn').forEach(tab => {
+                tab.classList.remove('tab-active');
+            });
+            
+            const topTab = document.getElementById(`tab-${pageId.split('-')[0]}`);
+            if (topTab) {
+                topTab.classList.add('tab-active');
+            }
+            
+            // Update bottom tabs
+            document.querySelectorAll('.bottom-tab').forEach(tab => {
+                tab.classList.remove('text-tg-button');
+            });
+            
+            const bottomTab = document.querySelector(`.bottom-tab[data-target="${pageId.split('-')[0]}"]`);
+            if (bottomTab) {
+                bottomTab.classList.add('text-tg-button');
+            }
+            
+            // Show back button for main-section pages if available
+            tg.BackButton.hide();
+            
+            // Set web app main button based on current page
+            tg.MainButton.hide();
+        }
+        
+        // Dashboard Data
+        function loadDashboardData() {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            const activities = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVITIES));
+            
+            // Calculate total products
+            document.getElementById('total-products').textContent = products.length;
+            
+            // Calculate low stock items
+            const lowStockCount = products.filter(product => 
+                product.stock <= (product.lowStock || 5)
+            ).length;
+            document.getElementById('low-stock').textContent = lowStockCount;
+            
+            // Calculate total sales
+            const totalSales = sales.reduce((total, sale) => total + sale.total, 0);
+            document.getElementById('total-sales').textContent = formatCurrency(totalSales);
+            
+            // Calculate today's sales
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales
+                .filter(sale => sale.date.startsWith(today))
+                .reduce((total, sale) => total + sale.total, 0);
+            document.getElementById('today-sales').textContent = formatCurrency(todaySales);
+            
+            // Load recent activities
+            loadActivities();
+        }
+        
+        function loadActivities() {
+            const activities = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVITIES));
+            const container = document.getElementById('recent-activities');
+            
+            if (activities.length === 0) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm">No recent activities</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // Show only the 5 most recent activities
+            activities.slice(0, 5).forEach(activity => {
+                html += `
+                    <div class="bg-tg-secondary p-3 rounded-lg">
+                        <p class="text-sm">${activity.description}</p>
+                        <p class="text-xs text-tg-hint mt-1">${formatDate(activity.timestamp)} at ${formatTime(activity.timestamp)}</p>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Inventory Functions
+        function loadInventory() {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const container = document.getElementById('inventory-list');
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm mb-4">No products in inventory</p>
+                        <button id="add-first-product" class="haptic py-2 px-4 rounded-lg primary text-sm font-medium">Add Your First Product</button>
+                    </div>
+                `;
+                
+                document.getElementById('add-first-product').addEventListener('click', () => {
+                    showPage('inventory-add');
+                });
+                return;
+            }
+            
+            let html = '';
+            
+            products.forEach(product => {
+                const stockStatus = product.stock <= 0 ? 'text-red-500' : 
+                    product.stock <= (product.lowStock || 5) ? 'text-amber-500' : 'text-green-500';
+                
+                html += `
+                    <div class="list-item bg-tg-secondary p-3 rounded-lg" data-id="${product.id}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${product.name}</h3>
+                                <p class="text-sm text-tg-hint">${product.category || 'Uncategorized'}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">${formatCurrency(product.price)}</p>
+                                <p class="text-sm ${stockStatus}">Stock: ${product.stock}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to inventory items
+            document.querySelectorAll('#inventory-list .list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const productId = item.getAttribute('data-id');
+                    showProductDetails(productId);
+                });
+            });
+        }
+        
+        function searchInventory(query) {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const container = document.getElementById('inventory-list');
+            
+            if (!query) {
+                loadInventory();
+                return;
+            }
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(query.toLowerCase()) ||
+                (product.barcode && product.barcode.includes(query)) ||
+                (product.category && product.category.toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            if (filteredProducts.length === 0) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm">No products found matching "${query}"</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            filteredProducts.forEach(product => {
+                const stockStatus = product.stock <= 0 ? 'text-red-500' : 
+                    product.stock <= (product.lowStock || 5) ? 'text-amber-500' : 'text-green-500';
+                
+                html += `
+                    <div class="list-item bg-tg-secondary p-3 rounded-lg" data-id="${product.id}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${product.name}</h3>
+                                <p class="text-sm text-tg-hint">${product.category || 'Uncategorized'}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">${formatCurrency(product.price)}</p>
+                                <p class="text-sm ${stockStatus}">Stock: ${product.stock}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to inventory items
+            document.querySelectorAll('#inventory-list .list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const productId = item.getAttribute('data-id');
+                    showProductDetails(productId);
+                });
+            });
+        }
+        
+        function addProduct(productData) {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            
+            const newProduct = {
+                id: generateId(),
+                name: productData.name,
+                price: parseFloat(productData.price),
+                cost: parseFloat(productData.cost) || 0,
+                stock: parseInt(productData.stock),
+                lowStock: parseInt(productData.lowStock) || 5,
+                category: productData.category,
+                description: productData.description,
+                barcode: productData.barcode,
+                createdAt: new Date().toISOString()
+            };
+            
+            products.push(newProduct);
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+            
+            addActivity(`Added new product: ${newProduct.name}`);
+            
+            return newProduct;
+        }
+        
+        function showProductDetails(productId) {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) {
+                tg.showAlert('Product not found');
+                return;
+            }
+            
+            // Build product details HTML
+            const stockStatus = product.stock <= 0 ? 'text-red-500' : 
+                product.stock <= (product.lowStock || 5) ? 'text-amber-500' : 'text-green-500';
+            
+            // Create temporary page
+            const tempPage = document.createElement('div');
+            tempPage.id = 'page-product-details';
+            tempPage.className = 'page px-4 py-6';
+            tempPage.innerHTML = `
+                <div class="flex items-center mb-6">
+                    <button id="back-to-inventory-from-details" class="haptic mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-tg-text">Product Details</h1>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    <h2 class="text-xl font-bold mb-1">${product.name}</h2>
+                    <p class="text-sm text-tg-hint mb-4">${product.category || 'Uncategorized'}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">Price</p>
+                            <p class="text-lg font-bold">${formatCurrency(product.price)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Cost</p>
+                            <p class="text-lg font-bold">${formatCurrency(product.cost)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Stock</p>
+                            <p class="text-lg font-bold ${stockStatus}">${product.stock}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Low Stock Alert</p>
+                            <p class="text-lg font-bold">${product.lowStock}</p>
+                        </div>
+                    </div>
+                    
+                    ${product.description ? `
+                        <div class="mb-4">
+                            <p class="text-xs text-tg-hint mb-1">Description</p>
+                            <p class="text-sm">${product.description}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${product.barcode ? `
+                        <div>
+                            <p class="text-xs text-tg-hint mb-1">Barcode</p>
+                            <p class="text-sm font-mono">${product.barcode}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="space-y-3">
+                    <button id="edit-product" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Edit Product</button>
+                    <button id="adjust-stock" class="haptic w-full py-3 rounded-lg bg-tg-secondary text-sm font-medium">Adjust Stock</button>
+                    <button id="delete-product" class="haptic w-full py-3 rounded-lg bg-red-500 text-white text-sm font-medium">Delete Product</button>
+                </div>
+            `;
+            
+            // Add to document
+            document.querySelector('.page-container').appendChild(tempPage);
+            
+            // Show page
+            showPage('product-details');
+            
+            // Setup event listeners
+            document.getElementById('back-to-inventory-from-details').addEventListener('click', () => {
+                // Remove temp page and show inventory
+                document.getElementById('page-product-details').remove();
+                showPage('inventory');
+            });
+            
+            document.getElementById('edit-product').addEventListener('click', () => {
+                editProduct(product);
+            });
+            
+            document.getElementById('adjust-stock').addEventListener('click', () => {
+                adjustStock(product);
+            });
+            
+            document.getElementById('delete-product').addEventListener('click', () => {
+                deleteProduct(product);
+            });
+        }
+        
+        function editProduct(product) {
+            // Create temporary page
+            const tempPage = document.createElement('div');
+            tempPage.id = 'page-edit-product';
+            tempPage.className = 'page px-4 py-6';
+            tempPage.innerHTML = `
+                <div class="flex items-center mb-6">
+                    <button id="back-to-product-details" class="haptic mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-tg-text">Edit Product</h1>
+                </div>
+                
+                <form id="edit-product-form" class="space-y-4">
+                    <div>
+                        <label for="edit-product-name" class="block text-sm font-medium mb-1">Product Name*</label>
+                        <input type="text" id="edit-product-name" name="name" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="Enter product name" value="${product.name}">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-product-price" class="block text-sm font-medium mb-1">Price*</label>
+                            <input type="number" id="edit-product-price" name="price" step="0.01" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" value="${product.price}">
+                        </div>
+                        <div>
+                            <label for="edit-product-cost" class="block text-sm font-medium mb-1">Cost</label>
+                            <input type="number" id="edit-product-cost" name="cost" step="0.01" class="w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" value="${product.cost || ''}">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-product-stock" class="block text-sm font-medium mb-1">Stock Quantity*</label>
+                            <input type="number" id="edit-product-stock" name="stock" required class="w-full px-4 py-2 rounded-lg text-base" placeholder="0" value="${product.stock}">
+                        </div>
+                        <div>
+                            <label for="edit-product-low-stock" class="block text-sm font-medium mb-1">Low Stock Alert</label>
+                            <input type="number" id="edit-product-low-stock" name="lowStock" class="w-full px-4 py-2 rounded-lg text-base" placeholder="5" value="${product.lowStock || ''}">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-product-category" class="block text-sm font-medium mb-1">Category</label>
+                        <select id="edit-product-category" name="category" class="w-full px-4 py-2 rounded-lg text-base">
+                            <option value="">Select a category</option>
+                            <option value="Food" ${product.category === 'Food' ? 'selected' : ''}>Food</option>
+                            <option value="Beverages" ${product.category === 'Beverages' ? 'selected' : ''}>Beverages</option>
+                            <option value="Electronics" ${product.category === 'Electronics' ? 'selected' : ''}>Electronics</option>
+                            <option value="Clothing" ${product.category === 'Clothing' ? 'selected' : ''}>Clothing</option>
+                            <option value="Other" ${product.category === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-product-description" class="block text-sm font-medium mb-1">Description</label>
+                        <textarea id="edit-product-description" name="description" rows="3" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Product description...">${product.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label for="edit-product-barcode" class="block text-sm font-medium mb-1">Barcode (Optional)</label>
+                        <input type="text" id="edit-product-barcode" name="barcode" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Enter barcode" value="${product.barcode || ''}">
+                    </div>
+                    <input type="hidden" id="edit-product-id" value="${product.id}">
+                    <button type="submit" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Save Changes</button>
+                </form>
+            `;
+            
+            // Add to document
+            document.querySelector('.page-container').appendChild(tempPage);
+            
+            // Show page
+            showPage('edit-product');
+            
+            // Setup event listeners
+            document.getElementById('back-to-product-details').addEventListener('click', () => {
+                // Remove temp page
+                document.getElementById('page-edit-product').remove();
+                showPage('product-details');
+            });
+            
+            document.getElementById('edit-product-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+                const productId = document.getElementById('edit-product-id').value;
+                const productIndex = products.findIndex(p => p.id === productId);
+                
+                if (productIndex === -1) {
+                    tg.showAlert('Product not found');
+                    return;
+                }
+                
+                // Update product data
+                products[productIndex] = {
+                    ...products[productIndex],
+                    name: document.getElementById('edit-product-name').value,
+                    price: parseFloat(document.getElementById('edit-product-price').value),
+                    cost: parseFloat(document.getElementById('edit-product-cost').value) || 0,
+                    stock: parseInt(document.getElementById('edit-product-stock').value),
+                    lowStock: parseInt(document.getElementById('edit-product-low-stock').value) || 5,
+                    category: document.getElementById('edit-product-category').value,
+                    description: document.getElementById('edit-product-description').value,
+                    barcode: document.getElementById('edit-product-barcode').value,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+                
+                addActivity(`Updated product: ${products[productIndex].name}`);
+                
+                // Remove temp pages
+                document.getElementById('page-edit-product').remove();
+                document.getElementById('page-product-details').remove();
+                
+                // Reload inventory and show it
+                loadInventory();
+                loadDashboardData();
+                showPage('inventory');
+                
+                // Show success notification
+                tg.showPopup({
+                    title: 'Success',
+                    message: 'Product updated successfully',
+                    buttons: [{ type: 'ok' }]
+                });
+            });
+        }
+        
+        function adjustStock(product) {
+            // Create temporary page
+            const tempPage = document.createElement('div');
+            tempPage.id = 'page-adjust-stock';
+            tempPage.className = 'page px-4 py-6';
+            tempPage.innerHTML = `
+                <div class="flex items-center mb-6">
+                    <button id="back-to-product-details" class="haptic mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-tg-text">Adjust Stock</h1>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    <h2 class="text-lg font-semibold mb-1">${product.name}</h2>
+                    <p class="text-sm text-tg-hint mb-3">${product.category || 'Uncategorized'}</p>
+                    <div class="flex justify-between">
+                        <p>Current Stock:</p>
+                        <p class="font-bold">${product.stock}</p>
+                    </div>
+                </div>
+                
+                <form id="adjust-stock-form" class="space-y-4">
+                    <div>
+                        <label for="adjustment-type" class="block text-sm font-medium mb-1">Adjustment Type</label>
+                        <select id="adjustment-type" class="w-full px-4 py-2 rounded-lg text-base">
+                            <option value="add">Add to Stock</option>
+                            <option value="remove">Remove from Stock</option>
+                            <option value="set">Set Stock Value</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="adjustment-quantity" class="block text-sm font-medium mb-1">Quantity</label>
+                        <input type="number" id="adjustment-quantity" required class="w-full px-4 py-2 rounded-lg text-base" min="1" value="1">
+                    </div>
+                    <div>
+                        <label for="adjustment-reason" class="block text-sm font-medium mb-1">Reason (Optional)</label>
+                        <input type="text" id="adjustment-reason" class="w-full px-4 py-2 rounded-lg text-base" placeholder="Reason for adjustment">
+                    </div>
+                    <input type="hidden" id="adjustment-product-id" value="${product.id}">
+                    <button type="submit" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Apply Adjustment</button>
+                </form>
+            `;
+            
+            // Add to document
+            document.querySelector('.page-container').appendChild(tempPage);
+            
+            // Show page
+            showPage('adjust-stock');
+            
+            // Setup event listeners
+            document.getElementById('back-to-product-details').addEventListener('click', () => {
+                // Remove temp page
+                document.getElementById('page-adjust-stock').remove();
+                showPage('product-details');
+            });
+            
+            document.getElementById('adjust-stock-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+                const productId = document.getElementById('adjustment-product-id').value;
+                const productIndex = products.findIndex(p => p.id === productId);
+                
+                if (productIndex === -1) {
+                    tg.showAlert('Product not found');
+                    return;
+                }
+                
+                const adjustmentType = document.getElementById('adjustment-type').value;
+                const quantity = parseInt(document.getElementById('adjustment-quantity').value);
+                const reason = document.getElementById('adjustment-reason').value;
+                
+                let newStock = products[productIndex].stock;
+                let activityDesc = '';
+                
+                switch (adjustmentType) {
+                    case 'add':
+                        newStock += quantity;
+                        activityDesc = `Added ${quantity} to stock of ${products[productIndex].name}`;
+                        break;
+                    case 'remove':
+                        newStock = Math.max(0, newStock - quantity);
+                        activityDesc = `Removed ${quantity} from stock of ${products[productIndex].name}`;
+                        break;
+                    case 'set':
+                        newStock = quantity;
+                        activityDesc = `Set stock of ${products[productIndex].name} to ${quantity}`;
+                        break;
+                }
+                
+                if (reason) {
+                    activityDesc += ` (Reason: ${reason})`;
+                }
+                
+                // Update product stock
+                products[productIndex].stock = newStock;
+                products[productIndex].updatedAt = new Date().toISOString();
+                
+                localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+                
+                addActivity(activityDesc);
+                
+                // Remove temp pages
+                document.getElementById('page-adjust-stock').remove();
+                document.getElementById('page-product-details').remove();
+                
+                // Reload inventory and show it
+                loadInventory();
+                loadDashboardData();
+                showPage('inventory');
+                
+                // Show success notification
+                tg.showPopup({
+                    title: 'Success',
+                    message: 'Stock adjusted successfully',
+                    buttons: [{ type: 'ok' }]
+                });
+            });
+        }
+        
+        function deleteProduct(product) {
+            tg.showPopup({
+                title: 'Delete Product',
+                message: `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
+                buttons: [
+                    { id: 'cancel', type: 'cancel' },
+                    { id: 'delete', type: 'destructive', text: 'Delete' }
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'delete') {
+                    const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+                    const productIndex = products.findIndex(p => p.id === product.id);
+                    
+                    if (productIndex === -1) {
+                        tg.showAlert('Product not found');
+                        return;
+                    }
+                    
+                    products.splice(productIndex, 1);
+                    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+                    
+                    addActivity(`Deleted product: ${product.name}`);
+                    
+                    // Remove temp page
+                    document.getElementById('page-product-details').remove();
+                    
+                    // Reload inventory and show it
+                    loadInventory();
+                    loadDashboardData();
+                    showPage('inventory');
+                }
+            });
+        }
+        
+        // Sales Functions
+        function loadSales(period = 'today') {
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            const container = document.getElementById('sales-list');
+            
+            // Update filter buttons
+            document.querySelectorAll('.sales-filter').forEach(btn => {
+                btn.classList.remove('bg-tg-button', 'text-tg-buttonText');
+                btn.classList.add('bg-tg-secondary');
+            });
+            
+            document.getElementById(`sales-${period}`).classList.remove('bg-tg-secondary');
+            document.getElementById(`sales-${period}`).classList.add('bg-tg-button', 'text-tg-buttonText');
+            
+            let filteredSales = [];
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+            const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            
+            switch (period) {
+                case 'today':
+                    filteredSales = sales.filter(sale => sale.date >= today);
+                    break;
+                case 'week':
+                    filteredSales = sales.filter(sale => sale.date >= weekStart);
+                    break;
+                case 'month':
+                    filteredSales = sales.filter(sale => sale.date >= monthStart);
+                    break;
+                case 'all':
+                    filteredSales = sales;
+                    break;
+            }
+            
+            if (filteredSales.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm mb-4">No sales found for this period</p>
+                        <button id="create-first-sale" class="haptic py-2 px-4 rounded-lg primary text-sm font-medium">Create Your First Sale</button>
+                    </div>
+                `;
+                
+                document.getElementById('create-first-sale').addEventListener('click', () => {
+                    showPage('sales-add');
+                });
+                return;
+            }
+            
+            // Sort sales by date, newest first
+            filteredSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            let html = '';
+            
+            filteredSales.forEach(sale => {
+                html += `
+                    <div class="list-item bg-tg-secondary p-3 rounded-lg" data-id="${sale.id}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${sale.customer || 'Walk-in Customer'}</h3>
+                                <p class="text-sm text-tg-hint">${formatDate(sale.date)} ${formatTime(sale.date)}</p>
+                                <p class="text-xs text-tg-hint mt-1">Items: ${sale.items.length} | Payment: ${sale.paymentMethod}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">${formatCurrency(sale.total)}</p>
+                                ${sale.invoiceId ? '<p class="text-xs text-tg-hint">Invoice created</p>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to sales items
+            document.querySelectorAll('#sales-list .list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const saleId = item.getAttribute('data-id');
+                    showSaleDetails(saleId);
+                });
+            });
+        }
+        
+        function searchSaleProducts(query) {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const resultsContainer = document.getElementById('sale-products-results');
+            
+            if (!query) {
+                resultsContainer.innerHTML = '';
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(query.toLowerCase()) ||
+                (product.barcode && product.barcode.includes(query))
+            );
+            
+            if (filteredProducts.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="p-3">
+                        <p class="text-tg-hint text-sm">No products found</p>
+                    </div>
+                `;
+                resultsContainer.classList.remove('hidden');
+                return;
+            }
+            
+            let html = '';
+            
+            filteredProducts.forEach(product => {
+                const outOfStock = product.stock <= 0;
+                
+                html += `
+                    <div class="p-3 border-b border-tg-hint/10 ${outOfStock ? 'opacity-50' : 'cursor-pointer hover:bg-tg-hint/10'}" 
+                         data-id="${product.id}" ${outOfStock ? 'data-disabled="true"' : ''}>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${product.name}</h3>
+                                <p class="text-xs text-tg-hint">${product.category || 'Uncategorized'}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium">${formatCurrency(product.price)}</p>
+                                <p class="text-xs ${outOfStock ? 'text-red-500' : 'text-green-500'}">
+                                    ${outOfStock ? 'Out of stock' : `${product.stock} in stock`}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.remove('hidden');
+            
+            // Add event listeners to product items
+            document.querySelectorAll('#sale-products-results > div').forEach(item => {
+                if (item.getAttribute('data-disabled') !== 'true') {
+                    item.addEventListener('click', () => {
+                        const productId = item.getAttribute('data-id');
+                        addProductToCart(productId);
+                        document.getElementById('sale-product-search').value = '';
+                        resultsContainer.innerHTML = '';
+                        resultsContainer.classList.add('hidden');
+                    });
+                }
+            });
+        }
+        
+        function addProductToCart(productId) {
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) {
+                return;
+            }
+            
+            const cartContainer = document.getElementById('sale-cart');
+            const existingItem = document.querySelector(`.cart-item[data-id="${productId}"]`);
+            
+            if (existingItem) {
+                // If product already in cart, increment quantity
+                const qtyInput = existingItem.querySelector('.cart-item-qty');
+                const currentQty = parseInt(qtyInput.value);
+                const maxQty = parseInt(qtyInput.getAttribute('max'));
+                
+                if (currentQty < maxQty) {
+                    qtyInput.value = currentQty + 1;
+                    qtyInput.dispatchEvent(new Event('change'));
+                }
+                
+                return;
+            }
+            
+            // Remove "no products" message if present
+            const emptyCart = document.querySelector('#sale-cart .text-tg-hint');
+            if (emptyCart) {
+                cartContainer.innerHTML = '';
+            }
+            
+            // Add new product to cart
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item bg-tg-secondary p-3 rounded-lg';
+            cartItem.setAttribute('data-id', product.id);
+            
+            cartItem.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-medium">${product.name}</h3>
+                        <p class="text-xs text-tg-hint">${formatCurrency(product.price)} each</p>
+                    </div>
+                    <button class="remove-from-cart haptic p-1 rounded-full bg-tg-hint/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button class="decrement-qty haptic p-1 rounded-full bg-tg-hint/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                            </svg>
+                        </button>
+                        <input type="number" class="cart-item-qty mx-2 w-12 text-center rounded" value="1" min="1" max="${product.stock}">
+                        <button class="increment-qty haptic p-1 rounded-full bg-tg-hint/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="cart-item-total font-bold">${formatCurrency(product.price)}</p>
+                </div>
+            `;
+            
+            cartContainer.appendChild(cartItem);
+            
+            // Add event listeners
+            const qtyInput = cartItem.querySelector('.cart-item-qty');
+            
+            qtyInput.addEventListener('change', function() {
+                const qty = Math.min(Math.max(parseInt(this.value) || 1, 1), product.stock);
+                this.value = qty;
+                
+                const total = qty * product.price;
+                cartItem.querySelector('.cart-item-total').textContent = formatCurrency(total);
+                
+                updateSaleTotal();
+            });
+            
+            cartItem.querySelector('.remove-from-cart').addEventListener('click', function() {
+                cartItem.remove();
+                
+                // If cart is empty, show message
+                if (document.querySelectorAll('.cart-item').length === 0) {
+                    cartContainer.innerHTML = `
+                        <div class="flex items-center justify-center py-4 text-tg-hint text-sm">
+                            No products added to cart
+                        </div>
+                    `;
+                }
+                
+                updateSaleTotal();
+            });
+            
+            cartItem.querySelector('.decrement-qty').addEventListener('click', function() {
+                const currentQty = parseInt(qtyInput.value);
+                if (currentQty > 1) {
+                    qtyInput.value = currentQty - 1;
+                    qtyInput.dispatchEvent(new Event('change'));
+                }
+            });
+            
+            cartItem.querySelector('.increment-qty').addEventListener('click', function() {
+                const currentQty = parseInt(qtyInput.value);
+                const maxQty = parseInt(qtyInput.getAttribute('max'));
+                
+                if (currentQty < maxQty) {
+                    qtyInput.value = currentQty + 1;
+                    qtyInput.dispatchEvent(new Event('change'));
+                }
+            });
+            
+            updateSaleTotal();
+            
+            // Enable buttons if they were disabled
+            document.getElementById('complete-sale').disabled = false;
+            document.getElementById('create-invoice-from-sale').disabled = false;
+        }
+        
+        function updateSaleTotal() {
+            let subtotal = 0;
+            
+            document.querySelectorAll('.cart-item').forEach(item => {
+                const priceStr = item.querySelector('.cart-item-total').textContent;
+                const price = parseFloat(priceStr.replace('$', ''));
+                subtotal += price;
+            });
+            
+            const tax = subtotal * 0.1; // 10% tax
+            const total = subtotal + tax;
+            
+            document.getElementById('sale-subtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('sale-tax').textContent = formatCurrency(tax);
+            document.getElementById('sale-total').textContent = formatCurrency(total);
+        }
+        
+        function completeSale() {
+            const cartItems = document.querySelectorAll('.cart-item');
+            
+            if (cartItems.length === 0) {
+                tg.showAlert('Please add at least one product to the cart');
+                return;
+            }
+            
+            const items = [];
+            let subtotal = 0;
+            
+            // Gather cart items
+            cartItems.forEach(item => {
+                const productId = item.getAttribute('data-id');
+                const qty = parseInt(item.querySelector('.cart-item-qty').value);
+                const totalStr = item.querySelector('.cart-item-total').textContent;
+                const total = parseFloat(totalStr.replace('$', ''));
+                
+                items.push({
+                    productId,
+                    quantity: qty,
+                    price: total / qty,
+                    total
+                });
+                
+                subtotal += total;
+            });
+            
+            const tax = subtotal * 0.1; // 10% tax
+            const total = subtotal + tax;
+            
+            const sale = {
+                id: generateId(),
+                date: new Date().toISOString(),
+                customer: document.getElementById('sale-customer').value.trim() || 'Walk-in Customer',
+                items,
+                subtotal,
+                tax,
+                total,
+                paymentMethod: document.getElementById('sale-payment').value,
+                notes: document.getElementById('sale-notes').value.trim()
+            };
+            
+            // Update product stock
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            
+            items.forEach(item => {
+                const productIndex = products.findIndex(p => p.id === item.productId);
+                if (productIndex !== -1) {
+                    products[productIndex].stock -= item.quantity;
+                }
+            });
+            
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+            
+            // Save sale
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            sales.push(sale);
+            localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+            
+            addActivity(`New sale completed: ${formatCurrency(total)}`);
+            
+            // Reset form
+            document.getElementById('sale-cart').innerHTML = `
+                <div class="flex items-center justify-center py-4 text-tg-hint text-sm">
+                    No products added to cart
+                </div>
+            `;
+            document.getElementById('sale-customer').value = '';
+            document.getElementById('sale-notes').value = '';
+            document.getElementById('sale-payment').value = 'Cash';
+            document.getElementById('sale-subtotal').textContent = '$0.00';
+            document.getElementById('sale-tax').textContent = '$0.00';
+            document.getElementById('sale-total').textContent = '$0.00';
+            document.getElementById('complete-sale').disabled = true;
+            document.getElementById('create-invoice-from-sale').disabled = true;
+            
+            // Reload data
+            loadSales('today');
+            loadInventory();
+            loadDashboardData();
+            
+            // Show success and go back to sales
+            tg.showPopup({
+                title: 'Success',
+                message: 'Sale completed successfully',
+                buttons: [{ type: 'ok' }]
+            });
+            
+            showPage('sales');
+        }
+        
+        function showSaleDetails(saleId) {
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            const sale = sales.find(s => s.id === saleId);
+            
+            if (!sale) {
+                tg.showAlert('Sale not found');
+                return;
+            }
+            
+            // Get product details for each item
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const saleItems = sale.items.map(item => {
+                const product = products.find(p => p.id === item.productId) || { name: 'Unknown Product' };
+                return {
+                    ...item,
+                    name: product.name
+                };
+            });
+            
+            // Create temporary page
+            const tempPage = document.createElement('div');
+            tempPage.id = 'page-sale-details';
+            tempPage.className = 'page px-4 py-6';
+            
+            let itemsHtml = '';
+            saleItems.forEach(item => {
+                itemsHtml += `
+                    <div class="flex justify-between py-2 border-b border-tg-hint/10">
+                        <div>
+                            <p class="font-medium">${item.name}</p>
+                            <p class="text-xs text-tg-hint">${item.quantity} × ${formatCurrency(item.price)}</p>
+                        </div>
+                        <p class="font-medium">${formatCurrency(item.total)}</p>
+                    </div>
+                `;
+            });
+            
+            tempPage.innerHTML = `
+                <div class="flex items-center mb-6">
+                    <button id="back-to-sales-from-details" class="haptic mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-tg-text">Sale Details</h1>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    <div class="flex justify-between mb-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">Customer</p>
+                            <p class="font-medium">${sale.customer}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-tg-hint">Date & Time</p>
+                            <p class="font-medium">${formatDate(sale.date)} ${formatTime(sale.date)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mb-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">Payment Method</p>
+                            <p class="font-medium">${sale.paymentMethod}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-tg-hint">Status</p>
+                            <p class="font-medium text-green-500">Completed</p>
+                        </div>
+                    </div>
+                    
+                    ${sale.notes ? `
+                        <div class="mb-4">
+                            <p class="text-xs text-tg-hint mb-1">Notes</p>
+                            <p class="text-sm">${sale.notes}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <h2 class="text-lg font-semibold mb-2">Items</h2>
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    ${itemsHtml}
+                    
+                    <div class="pt-3 mt-2">
+                        <div class="flex justify-between mb-1">
+                            <p>Subtotal</p>
+                            <p>${formatCurrency(sale.subtotal)}</p>
+                        </div>
+                        <div class="flex justify-between mb-1">
+                            <p>Tax (10%)</p>
+                            <p>${formatCurrency(sale.tax)}</p>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg">
+                            <p>Total</p>
+                            <p>${formatCurrency(sale.total)}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    ${!sale.invoiceId ? `
+                        <button id="create-invoice-from-details" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Create Invoice</button>
+                    ` : `
+                        <button id="view-invoice" data-id="${sale.invoiceId}" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">View Invoice</button>
+                    `}
+                    <button id="share-receipt" class="haptic w-full py-3 rounded-lg bg-tg-secondary text-sm font-medium">Share Receipt</button>
+                </div>
+            `;
+            
+            // Add to document
+            document.querySelector('.page-container').appendChild(tempPage);
+            
+            // Show page
+            showPage('sale-details');
+            
+            // Setup event listeners
+            document.getElementById('back-to-sales-from-details').addEventListener('click', () => {
+                // Remove temp page
+                document.getElementById('page-sale-details').remove();
+                showPage('sales');
+            });
+            
+            if (!sale.invoiceId) {
+                document.getElementById('create-invoice-from-details').addEventListener('click', () => {
+                    createInvoiceFromSale(sale);
+                });
+            } else {
+                document.getElementById('view-invoice').addEventListener('click', () => {
+                    const invoiceId = document.getElementById('view-invoice').getAttribute('data-id');
+                    showInvoiceDetails(invoiceId);
+                });
+            }
+            
+            document.getElementById('share-receipt').addEventListener('click', () => {
+                // Generate receipt text
+                let receiptText = `RECEIPT\n\n`;
+                receiptText += `Date: ${formatDate(sale.date)} ${formatTime(sale.date)}\n`;
+                receiptText += `Customer: ${sale.customer}\n`;
+                receiptText += `Payment Method: ${sale.paymentMethod}\n\n`;
+                receiptText += `ITEMS\n`;
+                
+                saleItems.forEach(item => {
+                    receiptText += `${item.name} (${item.quantity} × ${formatCurrency(item.price)}): ${formatCurrency(item.total)}\n`;
+                });
+                
+                receiptText += `\nSubtotal: ${formatCurrency(sale.subtotal)}\n`;
+                receiptText += `Tax (10%): ${formatCurrency(sale.tax)}\n`;
+                receiptText += `Total: ${formatCurrency(sale.total)}\n`;
+                
+                if (sale.notes) {
+                    receiptText += `\nNotes: ${sale.notes}\n`;
+                }
+                
+                // Use Telegram SDK to share text
+                tg.shareData({
+                    text: receiptText
+                });
+            });
+        }
+        
+        // Invoice Functions
+        function loadInvoices() {
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            const container = document.getElementById('invoices-list');
+            
+            if (invoices.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm mb-4">No invoices created yet</p>
+                        <button id="create-first-invoice" class="haptic py-2 px-4 rounded-lg primary text-sm font-medium">Create Your First Invoice</button>
+                    </div>
+                `;
+                
+                document.getElementById('create-first-invoice').addEventListener('click', () => {
+                    showPage('invoices-create');
+                });
+                return;
+            }
+            
+            // Sort invoices by date, newest first
+            invoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            let html = '';
+            
+            invoices.forEach(invoice => {
+                const isPaid = invoice.status === 'paid';
+                const isOverdue = !isPaid && new Date(invoice.dueDate) < new Date();
+                
+                let statusClass = 'bg-yellow-100 text-yellow-800';
+                if (isPaid) {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (isOverdue) {
+                    statusClass = 'bg-red-100 text-red-800';
+                }
+                
+                html += `
+                    <div class="list-item bg-tg-secondary p-3 rounded-lg" data-id="${invoice.id}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${invoice.customer}</h3>
+                                <p class="text-xs text-tg-hint">Invoice #${invoice.number}</p>
+                                <p class="text-xs text-tg-hint mt-1">
+                                    Created: ${formatDate(invoice.createdAt)} | 
+                                    Due: ${formatDate(invoice.dueDate)}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">${formatCurrency(invoice.total)}</p>
+                                <span class="inline-block px-2 py-1 rounded-full text-xs ${statusClass} mt-1">
+                                    ${isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to invoice items
+            document.querySelectorAll('#invoices-list .list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const invoiceId = item.getAttribute('data-id');
+                    showInvoiceDetails(invoiceId);
+                });
+            });
+        }
+        
+        function searchInvoices(query) {
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            const container = document.getElementById('invoices-list');
+            
+            if (!query) {
+                loadInvoices();
+                return;
+            }
+            
+            const filteredInvoices = invoices.filter(invoice => 
+                invoice.customer.toLowerCase().includes(query.toLowerCase()) ||
+                invoice.number.includes(query)
+            );
+            
+            if (filteredInvoices.length === 0) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center py-8">
+                        <p class="text-tg-hint text-sm">No invoices found matching "${query}"</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            filteredInvoices.forEach(invoice => {
+                const isPaid = invoice.status === 'paid';
+                const isOverdue = !isPaid && new Date(invoice.dueDate) < new Date();
+                
+                let statusClass = 'bg-yellow-100 text-yellow-800';
+                if (isPaid) {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (isOverdue) {
+                    statusClass = 'bg-red-100 text-red-800';
+                }
+                
+                html += `
+                    <div class="list-item bg-tg-secondary p-3 rounded-lg" data-id="${invoice.id}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium">${invoice.customer}</h3>
+                                <p class="text-xs text-tg-hint">Invoice #${invoice.number}</p>
+                                <p class="text-xs text-tg-hint mt-1">
+                                    Created: ${formatDate(invoice.createdAt)} | 
+                                    Due: ${formatDate(invoice.dueDate)}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">${formatCurrency(invoice.total)}</p>
+                                <span class="inline-block px-2 py-1 rounded-full text-xs ${statusClass} mt-1">
+                                    ${isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to invoice items
+            document.querySelectorAll('#invoices-list .list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const invoiceId = item.getAttribute('data-id');
+                    showInvoiceDetails(invoiceId);
+                });
+            });
+        }
+        
+        function updateInvoiceTotal() {
+            let subtotal = 0;
+            
+            document.querySelectorAll('.invoice-item').forEach(item => {
+                const price = parseFloat(item.querySelector('.invoice-item-price').value) || 0;
+                const qty = parseInt(item.querySelector('.invoice-item-qty').value) || 0;
+                const total = price * qty;
+                
+                item.querySelector('.invoice-item-total').value = total.toFixed(2);
+                subtotal += total;
+            });
+            
+            const tax = subtotal * 0.1; // 10% tax
+            const total = subtotal + tax;
+            
+            document.getElementById('invoice-subtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('invoice-tax').textContent = formatCurrency(tax);
+            document.getElementById('invoice-total').textContent = formatCurrency(total);
+        }
+        
+        function addInvoiceItem() {
+            const container = document.getElementById('invoice-items');
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'invoice-item bg-tg-secondary p-4 rounded-lg';
+            
+            itemDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium">Item</h3>
+                    <button class="remove-invoice-item haptic p-1 rounded-full bg-tg-hint/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-2">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Item</label>
+                        <input type="text" class="invoice-item-name w-full px-4 py-2 rounded-lg text-base" placeholder="Item name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Price</label>
+                        <input type="number" class="invoice-item-price w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Quantity</label>
+                        <input type="number" class="invoice-item-qty w-full px-4 py-2 rounded-lg text-base" placeholder="1" min="1" value="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Total</label>
+                        <input type="number" class="invoice-item-total w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" readonly>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(itemDiv);
+            
+            // Add event listeners
+            const priceInput = itemDiv.querySelector('.invoice-item-price');
+            const qtyInput = itemDiv.querySelector('.invoice-item-qty');
+            
+            priceInput.addEventListener('input', updateInvoiceTotal);
+            qtyInput.addEventListener('input', updateInvoiceTotal);
+            
+            itemDiv.querySelector('.remove-invoice-item').addEventListener('click', function() {
+                itemDiv.remove();
+                updateInvoiceTotal();
+            });
+        }
+        
+        function createInvoice(formData) {
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            
+            // Generate invoice number
+            const invoiceNumber = 'INV-' + new Date().getFullYear() + '-' + (invoices.length + 1).toString().padStart(3, '0');
+            
+            const items = [];
+            let subtotal = 0;
+            
+            document.querySelectorAll('.invoice-item').forEach(item => {
+                const name = item.querySelector('.invoice-item-name').value;
+                const price = parseFloat(item.querySelector('.invoice-item-price').value) || 0;
+                const qty = parseInt(item.querySelector('.invoice-item-qty').value) || 0;
+                const total = price * qty;
+                
+                if (name && price > 0 && qty > 0) {
+                    items.push({
+                        name,
+                        price,
+                        quantity: qty,
+                        total
+                    });
+                    
+                    subtotal += total;
+                }
+            });
+            
+            if (items.length === 0) {
+                tg.showAlert('Please add at least one item to the invoice');
+                return null;
+            }
+            
+            const tax = subtotal * 0.1; // 10% tax
+            const total = subtotal + tax;
+            
+            const invoice = {
+                id: generateId(),
+                number: invoiceNumber,
+                customer: formData.customer,
+                createdAt: new Date().toISOString(),
+                date: formData.date,
+                dueDate: formData.dueDate,
+                items,
+                subtotal,
+                tax,
+                total,
+                notes: formData.notes,
+                status: 'pending'
+            };
+            
+            invoices.push(invoice);
+            localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+            
+            addActivity(`Created new invoice: ${invoiceNumber} for ${formData.customer}`);
+            
+            return invoice;
+        }
+        
+        function createInvoiceFromSale(sale) {
+            // Get product details for each item
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const saleItems = sale.items.map(item => {
+                const product = products.find(p => p.id === item.productId) || { name: 'Unknown Product' };
+                return {
+                    name: product.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    total: item.total
+                };
+            });
+            
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            
+            // Generate invoice number
+            const invoiceNumber = 'INV-' + new Date().getFullYear() + '-' + (invoices.length + 1).toString().padStart(3, '0');
+            
+            // Create due date (7 days from now)
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 7);
+            
+            const invoice = {
+                id: generateId(),
+                number: invoiceNumber,
+                customer: sale.customer,
+                createdAt: new Date().toISOString(),
+                date: sale.date,
+                dueDate: dueDate.toISOString(),
+                items: saleItems,
+                subtotal: sale.subtotal,
+                tax: sale.tax,
+                total: sale.total,
+                notes: sale.notes,
+                status: 'pending',
+                saleId: sale.id
+            };
+            
+            invoices.push(invoice);
+            localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+            
+            // Update sale with invoice reference
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            const saleIndex = sales.findIndex(s => s.id === sale.id);
+            
+            if (saleIndex !== -1) {
+                sales[saleIndex].invoiceId = invoice.id;
+                localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+            }
+            
+            addActivity(`Created invoice ${invoiceNumber} from sale for ${sale.customer}`);
+            
+            // Reload data
+            loadInvoices();
+            
+            // Show invoice details
+            if (document.getElementById('page-sale-details')) {
+                document.getElementById('page-sale-details').remove();
+            }
+            
+            showInvoiceDetails(invoice.id);
+        }
+        
+        function showInvoiceDetails(invoiceId) {
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            const invoice = invoices.find(i => i.id === invoiceId);
+            
+            if (!invoice) {
+                tg.showAlert('Invoice not found');
+                return;
+            }
+            
+            const isPaid = invoice.status === 'paid';
+            const isOverdue = !isPaid && new Date(invoice.dueDate) < new Date();
+            
+            let statusClass = 'bg-yellow-100 text-yellow-800';
+            let statusText = 'Pending';
+            
+            if (isPaid) {
+                statusClass = 'bg-green-100 text-green-800';
+                statusText = 'Paid';
+            } else if (isOverdue) {
+                statusClass = 'bg-red-100 text-red-800';
+                statusText = 'Overdue';
+            }
+            
+            // Create temporary page
+            const tempPage = document.createElement('div');
+            tempPage.id = 'page-invoice-details';
+            tempPage.className = 'page px-4 py-6';
+            
+            let itemsHtml = '';
+            invoice.items.forEach(item => {
+                itemsHtml += `
+                    <div class="flex justify-between py-2 border-b border-tg-hint/10">
+                        <div>
+                            <p class="font-medium">${item.name}</p>
+                            <p class="text-xs text-tg-hint">${item.quantity} × ${formatCurrency(item.price)}</p>
+                        </div>
+                        <p class="font-medium">${formatCurrency(item.total)}</p>
+                    </div>
+                `;
+            });
+            
+            tempPage.innerHTML = `
+                <div class="flex items-center mb-6">
+                    <button id="back-to-invoices-from-details" class="haptic mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-tg-text">Invoice Details</h1>
+                </div>
+                
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Invoice #${invoice.number}</h2>
+                        <span class="inline-block px-2 py-1 rounded-full text-xs ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-xs text-tg-hint">Customer</p>
+                            <p class="font-medium">${invoice.customer}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Created Date</p>
+                            <p class="font-medium">${formatDate(invoice.createdAt)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Invoice Date</p>
+                            <p class="font-medium">${formatDate(invoice.date)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-tg-hint">Due Date</p>
+                            <p class="font-medium">${formatDate(invoice.dueDate)}</p>
+                        </div>
+                    </div>
+                    
+                    ${invoice.notes ? `
+                        <div>
+                            <p class="text-xs text-tg-hint mb-1">Notes</p>
+                            <p class="text-sm">${invoice.notes}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <h2 class="text-lg font-semibold mb-2">Items</h2>
+                <div class="bg-tg-secondary p-4 rounded-lg mb-6">
+                    ${itemsHtml}
+                    
+                    <div class="pt-3 mt-2">
+                        <div class="flex justify-between mb-1">
+                            <p>Subtotal</p>
+                            <p>${formatCurrency(invoice.subtotal)}</p>
+                        </div>
+                        <div class="flex justify-between mb-1">
+                            <p>Tax (10%)</p>
+                            <p>${formatCurrency(invoice.tax)}</p>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg">
+                            <p>Total</p>
+                            <p>${formatCurrency(invoice.total)}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    ${!isPaid ? `
+                        <button id="mark-as-paid" class="haptic w-full py-3 rounded-lg primary text-sm font-medium">Mark as Paid</button>
+                    ` : ''}
+                    <button id="share-invoice" class="haptic w-full py-3 rounded-lg bg-tg-secondary text-sm font-medium">Share Invoice</button>
+                    ${isPaid ? '' : `
+                        <button id="delete-invoice" class="haptic w-full py-3 rounded-lg bg-red-500 text-white text-sm font-medium">Delete Invoice</button>
+                    `}
+                </div>
+            `;
+            
+            // Add to document
+            document.querySelector('.page-container').appendChild(tempPage);
+            
+            // Show page
+            showPage('invoice-details');
+            
+            // Setup event listeners
+            document.getElementById('back-to-invoices-from-details').addEventListener('click', () => {
+                // Remove temp page
+                document.getElementById('page-invoice-details').remove();
+                showPage('invoices');
+            });
+            
+            if (!isPaid) {
+                document.getElementById('mark-as-paid').addEventListener('click', () => {
+                    markInvoiceAsPaid(invoice.id);
+                });
+                
+                document.getElementById('delete-invoice').addEventListener('click', () => {
+                    deleteInvoice(invoice.id);
+                });
+            }
+            
+            document.getElementById('share-invoice').addEventListener('click', () => {
+                // Generate invoice text
+                let invoiceText = `INVOICE #${invoice.number}\n\n`;
+                invoiceText += `Customer: ${invoice.customer}\n`;
+                invoiceText += `Date: ${formatDate(invoice.date)}\n`;
+                invoiceText += `Due Date: ${formatDate(invoice.dueDate)}\n`;
+                invoiceText += `Status: ${statusText}\n\n`;
+                invoiceText += `ITEMS\n`;
+                
+                invoice.items.forEach(item => {
+                    invoiceText += `${item.name} (${item.quantity} × ${formatCurrency(item.price)}): ${formatCurrency(item.total)}\n`;
+                });
+                
+                invoiceText += `\nSubtotal: ${formatCurrency(invoice.subtotal)}\n`;
+                invoiceText += `Tax (10%): ${formatCurrency(invoice.tax)}\n`;
+                invoiceText += `Total: ${formatCurrency(invoice.total)}\n`;
+                
+                if (invoice.notes) {
+                    invoiceText += `\nNotes: ${invoice.notes}\n`;
+                }
+                
+                // Use Telegram SDK to share text
+                tg.shareData({
+                    text: invoiceText
+                });
+            });
+        }
+        
+        function markInvoiceAsPaid(invoiceId) {
+            const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+            const invoiceIndex = invoices.findIndex(i => i.id === invoiceId);
+            
+            if (invoiceIndex === -1) {
+                tg.showAlert('Invoice not found');
+                return;
+            }
+            
+            // Update invoice status
+            invoices[invoiceIndex].status = 'paid';
+            invoices[invoiceIndex].paidDate = new Date().toISOString();
+            
+            localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+            
+            addActivity(`Marked invoice #${invoices[invoiceIndex].number} as paid`);
+            
+            // Remove temp page
+            document.getElementById('page-invoice-details').remove();
+            
+            // Reload invoices and show
+            loadInvoices();
+            showPage('invoices');
+            
+            // Show success notification
+            tg.showPopup({
+                title: 'Success',
+                message: 'Invoice marked as paid',
+                buttons: [{ type: 'ok' }]
+            });
+        }
+        
+        function deleteInvoice(invoiceId) {
+            tg.showPopup({
+                title: 'Delete Invoice',
+                message: 'Are you sure you want to delete this invoice? This action cannot be undone.',
+                buttons: [
+                    { id: 'cancel', type: 'cancel' },
+                    { id: 'delete', type: 'destructive', text: 'Delete' }
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'delete') {
+                    const invoices = JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES));
+                    const invoiceIndex = invoices.findIndex(i => i.id === invoiceId);
+                    
+                    if (invoiceIndex === -1) {
+                        tg.showAlert('Invoice not found');
+                        return;
+                    }
+                    
+                    const invoice = invoices[invoiceIndex];
+                    
+                    // If invoice is linked to a sale, remove the link
+                    if (invoice.saleId) {
+                        const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+                        const saleIndex = sales.findIndex(s => s.id === invoice.saleId);
+                        
+                        if (saleIndex !== -1) {
+                            delete sales[saleIndex].invoiceId;
+                            localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+                        }
+                    }
+                    
+                    // Delete invoice
+                    invoices.splice(invoiceIndex, 1);
+                    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+                    
+                    addActivity(`Deleted invoice #${invoice.number}`);
+                    
+                    // Remove temp page
+                    document.getElementById('page-invoice-details').remove();
+                    
+                    // Reload invoices and show
+                    loadInvoices();
+                    showPage('invoices');
+                }
+            });
+        }
+        
+        // Reports Functions
+        function loadReports(period = 'week') {
+            // Update dropdown
+            document.getElementById('report-period').value = period;
+            
+            // Get data
+            const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+            const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            
+            // Filter sales by period
+            let filteredSales = [];
+            const now = new Date();
+            
+            switch (period) {
+                case 'week':
+                    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString();
+                    filteredSales = sales.filter(sale => sale.date >= weekStart);
+                    break;
+                case 'month':
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                    filteredSales = sales.filter(sale => sale.date >= monthStart);
+                    break;
+                case 'quarter':
+                    const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1).toISOString();
+                    filteredSales = sales.filter(sale => sale.date >= quarterStart);
+                    break;
+                case 'year':
+                    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
+                    filteredSales = sales.filter(sale => sale.date >= yearStart);
+                    break;
+            }
+            
+            // Calculate sales summary
+            const totalRevenue = filteredSales.reduce((total, sale) => total + sale.total, 0);
+            const salesCount = filteredSales.length;
+            const avgSale = salesCount > 0 ? totalRevenue / salesCount : 0;
+            
+            // Calculate profit margin
+            let totalCost = 0;
+            filteredSales.forEach(sale => {
+                sale.items.forEach(item => {
+                    const product = products.find(p => p.id === item.productId);
+                    if (product) {
+                        totalCost += product.cost * item.quantity;
+                    }
+                });
+            });
+            
+            const profit = totalRevenue - totalCost;
+            const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+            
+            // Update sales summary
+            document.getElementById('report-revenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('report-sales-count').textContent = salesCount;
+            document.getElementById('report-avg-sale').textContent = formatCurrency(avgSale);
+            document.getElementById('report-profit-margin').textContent = `${profitMargin.toFixed(1)}%`;
+            
+            // Calculate top products
+            const productSales = {};
+            
+            filteredSales.forEach(sale => {
+                sale.items.forEach(item => {
+                    if (!productSales[item.productId]) {
+                        productSales[item.productId] = {
+                            quantity: 0,
+                            revenue: 0
+                        };
+                    }
+                    
+                    productSales[item.productId].quantity += item.quantity;
+                    productSales[item.productId].revenue += item.total;
+                });
+            });
+            
+            // Sort products by revenue
+            const topProducts = Object.keys(productSales)
+                .map(productId => {
+                    const product = products.find(p => p.id === productId);
+                    return {
+                        id: productId,
+                        name: product ? product.name : 'Unknown Product',
+                        quantity: productSales[productId].quantity,
+                        revenue: productSales[productId].revenue
+                    };
+                })
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 5);
+            
+            // Update top products
+            const topProductsContainer = document.getElementById('top-products');
+            
+            if (topProducts.length === 0) {
+                topProductsContainer.innerHTML = `
+                    <div class="flex items-center justify-center py-4">
+                        <p class="text-tg-hint text-sm">No data available</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                
+                topProducts.forEach(product => {
+                    html += `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">${product.name}</p>
+                                <p class="text-xs text-tg-hint">Sold: ${product.quantity}</p>
+                            </div>
+                            <p class="font-medium">${formatCurrency(product.revenue)}</p>
+                        </div>
+                    `;
+                });
+                
+                topProductsContainer.innerHTML = html;
+            }
+            
+            // Calculate inventory status
+            const inStock = products.filter(product => product.stock > (product.lowStock || 5)).length;
+            const lowStock = products.filter(product => product.stock > 0 && product.stock <= (product.lowStock || 5)).length;
+            const outOfStock = products.filter(product => product.stock <= 0).length;
+            
+            const inventoryValue = products.reduce((total, product) => total + (product.cost * product.stock), 0);
+            
+            // Update inventory status
+            document.getElementById('report-in-stock').textContent = inStock;
+            document.getElementById('report-low-stock').textContent = lowStock;
+            document.getElementById('report-out-stock').textContent = outOfStock;
+            document.getElementById('report-inventory-value').textContent = formatCurrency(inventoryValue);
+        }
+        
+        // Event Listeners
+        function setupEventListeners() {
+            // Navigation
+            document.querySelectorAll('.tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const pageId = tab.id.replace('tab-', '');
+                    showPage(pageId);
+                });
+            });
+            
+            document.querySelectorAll('.bottom-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const pageId = tab.getAttribute('data-target');
+                    showPage(pageId);
+                });
+            });
+            
+            document.querySelectorAll('.quick-action').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetPage = btn.getAttribute('data-target');
+                    showPage(targetPage);
+                });
+            });
+            
+            // Dashboard
+            document.getElementById('refresh-data').addEventListener('click', () => {
+                loadDashboardData();
+                loadInventory();
+                loadSales('today');
+                loadInvoices();
+                loadReports(document.getElementById('report-period').value);
+            });
+            
+            // Inventory
+            document.getElementById('add-product-btn').addEventListener('click', () => {
+                showPage('inventory-add');
+            });
+            
+            document.getElementById('back-to-inventory').addEventListener('click', () => {
+                showPage('inventory');
+            });
+            
+            document.getElementById('inventory-search').addEventListener('input', function() {
+                searchInventory(this.value);
+            });
+            
+            document.getElementById('add-product-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    name: document.getElementById('product-name').value,
+                    price: document.getElementById('product-price').value,
+                    cost: document.getElementById('product-cost').value,
+                    stock: document.getElementById('product-stock').value,
+                    lowStock: document.getElementById('product-low-stock').value,
+                    category: document.getElementById('product-category').value,
+                    description: document.getElementById('product-description').value,
+                    barcode: document.getElementById('product-barcode').value
+                };
+                
+                const newProduct = addProduct(formData);
+                
+                // Reset form
+                this.reset();
+                
+                // Show success message
+                tg.showPopup({
+                    title: 'Success',
+                    message: 'Product added successfully',
+                    buttons: [{ type: 'ok' }]
+                });
+                
+                // Reload inventory and go back to it
+                loadInventory();
+                loadDashboardData();
+                showPage('inventory');
+            });
+            
+            // Sales
+            document.getElementById('new-sale-btn').addEventListener('click', () => {
+                showPage('sales-add');
+            });
+            
+            document.getElementById('back-to-sales').addEventListener('click', () => {
+                showPage('sales');
+            });
+            
+            document.querySelectorAll('.sales-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const period = btn.id.replace('sales-', '');
+                    loadSales(period);
+                });
+            });
+            
+            document.getElementById('sale-product-search').addEventListener('input', function() {
+                searchSaleProducts(this.value);
+            });
+            
+            document.getElementById('complete-sale').addEventListener('click', completeSale);
+            
+            document.getElementById('create-invoice-from-sale').addEventListener('click', () => {
+                // Get current cart data
+                const cartItems = document.querySelectorAll('.cart-item');
+                
+                if (cartItems.length === 0) {
+                    tg.showAlert('Please add at least one product to the cart');
+                    return;
+                }
+                
+                const items = [];
+                let subtotal = 0;
+                
+                // Gather cart items
+                cartItems.forEach(item => {
+                    const productId = item.getAttribute('data-id');
+                    const qty = parseInt(item.querySelector('.cart-item-qty').value);
+                    const totalStr = item.querySelector('.cart-item-total').textContent;
+                    const total = parseFloat(totalStr.replace('$', ''));
+                    
+                    items.push({
+                        productId,
+                        quantity: qty,
+                        price: total / qty,
+                        total
+                    });
+                    
+                    subtotal += total;
+                });
+                
+                const tax = subtotal * 0.1; // 10% tax
+                const total = subtotal + tax;
+                
+                const saleData = {
+                    id: generateId(),
+                    date: new Date().toISOString(),
+                    customer: document.getElementById('sale-customer').value.trim() || 'Walk-in Customer',
+                    items,
+                    subtotal,
+                    tax,
+                    total,
+                    paymentMethod: document.getElementById('sale-payment').value,
+                    notes: document.getElementById('sale-notes').value.trim()
+                };
+                
+                // Update product stock
+                const products = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
+                
+                items.forEach(item => {
+                    const productIndex = products.findIndex(p => p.id === item.productId);
+                    if (productIndex !== -1) {
+                        products[productIndex].stock -= item.quantity;
+                    }
+                });
+                
+                localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+                
+                // Save sale
+                const sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+                sales.push(saleData);
+                localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+                
+                addActivity(`New sale completed: ${formatCurrency(total)}`);
+                
+                // Create invoice from sale
+                createInvoiceFromSale(saleData);
+                
+                // Reset form
+                document.getElementById('sale-cart').innerHTML = `
+                    <div class="flex items-center justify-center py-4 text-tg-hint text-sm">
+                        No products added to cart
+                    </div>
+                `;
+                document.getElementById('sale-customer').value = '';
+                document.getElementById('sale-notes').value = '';
+                document.getElementById('sale-payment').value = 'Cash';
+                document.getElementById('sale-subtotal').textContent = '$0.00';
+                document.getElementById('sale-tax').textContent = '$0.00';
+                document.getElementById('sale-total').textContent = '$0.00';
+                document.getElementById('complete-sale').disabled = true;
+                document.getElementById('create-invoice-from-sale').disabled = true;
+                
+                // Reload data
+                loadSales('today');
+                loadInventory();
+                loadDashboardData();
+            });
+            
+            // Invoices
+            document.getElementById('create-invoice-btn').addEventListener('click', () => {
+                showPage('invoices-create');
+            });
+            
+            document.getElementById('back-to-invoices').addEventListener('click', () => {
+                showPage('invoices');
+            });
+            
+            document.getElementById('invoice-search').addEventListener('input', function() {
+                searchInvoices(this.value);
+            });
+            
+            document.getElementById('add-invoice-item').addEventListener('click', addInvoiceItem);
+            
+            // Add event listeners for first invoice item
+            document.querySelectorAll('.invoice-item-price, .invoice-item-qty').forEach(input => {
+                input.addEventListener('input', updateInvoiceTotal);
+            });
+            
+            document.getElementById('create-invoice-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    customer: document.getElementById('invoice-customer').value,
+                    date: document.getElementById('invoice-date').value,
+                    dueDate: document.getElementById('invoice-due').value,
+                    notes: document.getElementById('invoice-notes').value
+                };
+                
+                const invoice = createInvoice(formData);
+                
+                if (invoice) {
+                    // Reset form
+                    this.reset();
+                    document.getElementById('invoice-items').innerHTML = `
+                        <div class="invoice-item bg-tg-secondary p-4 rounded-lg">
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Item</label>
+                                    <input type="text" class="invoice-item-name w-full px-4 py-2 rounded-lg text-base" placeholder="Item name">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Price</label>
+                                    <input type="number" class="invoice-item-price w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Quantity</label>
+                                    <input type="number" class="invoice-item-qty w-full px-4 py-2 rounded-lg text-base" placeholder="1" min="1" value="1">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Total</label>
+                                    <input type="number" class="invoice-item-total w-full px-4 py-2 rounded-lg text-base" placeholder="0.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('invoice-subtotal').textContent = '$0.00';
+                    document.getElementById('invoice-tax').textContent = '$0.00';
+                    document.getElementById('invoice-total').textContent = '$0.00';
+                    
+                    // Add event listeners for first invoice item
+                    document.querySelectorAll('.invoice-item-price, .invoice-item-qty').forEach(input => {
+                        input.addEventListener('input', updateInvoiceTotal);
+                    });
+                    
+                    // Set current date for invoice
+                    document.getElementById('invoice-date').valueAsDate = new Date();
+                    
+                    // Set due date as 7 days from now
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + 7);
+                    document.getElementById('invoice-due').valueAsDate = dueDate;
+                    
+                    // Show success message
+                    tg.showPopup({
+                        title: 'Success',
+                        message: 'Invoice created successfully',
+                        buttons: [{ type: 'ok' }]
+                    });
+                    
+                    // Reload invoices and go back to it
+                    loadInvoices();
+                    loadDashboardData();
+                    showPage('invoices');
+                }
+            });
+            
+            // Reports
+            document.getElementById('report-period').addEventListener('change', function() {
+                loadReports(this.value);
+            });
+            
+            document.getElementById('download-report').addEventListener('click', () => {
+                const period = document.getElementById('report-period').value;
+                
+                // Generate report text
+                let reportText = `SALES AND INVENTORY REPORT\n\n`;
+                reportText += `Period: ${period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : period === 'quarter' ? 'This Quarter' : 'This Year'}\n\n`;
+                
+                reportText += `SALES SUMMARY\n`;
+                reportText += `Total Revenue: ${document.getElementById('report-revenue').textContent}\n`;
+                reportText += `Total Sales: ${document.getElementById('report-sales-count').textContent}\n`;
+                reportText += `Average Sale: ${document.getElementById('report-avg-sale').textContent}\n`;
+                reportText += `Profit Margin: ${document.getElementById('report-profit-margin').textContent}\n\n`;
+                
+                reportText += `INVENTORY STATUS\n`;
+                reportText += `In Stock: ${document.getElementById('report-in-stock').textContent}\n`;
+                reportText += `Low Stock: ${document.getElementById('report-low-stock').textContent}\n`;
+                reportText += `Out of Stock: ${document.getElementById('report-out-stock').textContent}\n`;
+                reportText += `Inventory Value: ${document.getElementById('report-inventory-value').textContent}\n\n`;
+                
+                reportText += `TOP PRODUCTS\n`;
+                const topProducts = document.querySelectorAll('#top-products > div');
+                
+                if (topProducts.length > 0) {
+                    topProducts.forEach((product, index) => {
+                        const name = product.querySelector('.font-medium').textContent;
+                        const sold = product.querySelector('.text-xs').textContent;
+                        const revenue = product.querySelectorAll('.font-medium')[1].textContent;
+                        
+                        reportText += `${index + 1}. ${name} - ${sold}, Revenue: ${revenue}\n`;
+                    });
+                } else {
+                    reportText += `No data available\n`;
+                }
+                
+                reportText += `\nGenerated on ${formatDate(new Date())} at ${formatTime(new Date())}`;
+                
+                // Use Telegram SDK to share text
+                tg.shareData({
+                    text: reportText
+                });
+            });
+        }
+    </script>
+</body>
+</html>
