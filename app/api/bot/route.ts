@@ -33,29 +33,29 @@ bot.use(async (ctx, next) => {
 
 registerCommandHandlers(bot, ADMIN_ID);
 registerCallbackHandlers(bot);
-bot.start();
+// bot.start();
 // Webhook configuration
-// bot.start({
-//   onStart: async () => {
-//     try {
-//       await bot.api.setWebhook(endpoint);
-//       console.log("Webhook set successfully");
-//     } catch (error) {
-//       console.error("Failed to set webhook:", error);
-//       process.exit(1);
-//     }
-//   }
-// });
+bot.start({
+  onStart: async () => {
+    try {
+      await bot.api.setWebhook(endpoint);
+      console.log("Webhook set successfully");
+    } catch (error) {
+      console.error("Failed to set webhook:", error);
+      process.exit(1);
+    }
+  }
+});
 
-// export const POST = async (req: NextRequest) => {
-//   try {
-//     const handler = webhookCallback(bot, 'std/http');
-//     return await handler(req);
-//   } catch (error) {
-//     console.error("Webhook handler error:", error);
-//     return NextResponse.json(
-//       { status: "error", message: "Internal server error" },
-//       { status: 500 }
-//     );
-//   }
-// };
+export const POST = async (req: NextRequest) => {
+  try {
+    const handler = webhookCallback(bot, 'std/http');
+    return await handler(req);
+  } catch (error) {
+    console.error("Webhook handler error:", error);
+    return NextResponse.json(
+      { status: "error", message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
